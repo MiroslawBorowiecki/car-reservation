@@ -10,30 +10,32 @@ public class CarTests
     private WebApplicationFactory<Program> _factory = new();
 
     [TestMethod]
-    [DataRow(null, "MX-5", nameof(Car.Make), DisplayName = nameof(Car.Make))]
-    [DataRow("Mazda", null, nameof(Car.Model), DisplayName = nameof(Car.Model))]
+    [DataRow(null, "MX-5", "C1", nameof(Car.Make), DisplayName = nameof(Car.Make))]
+    [DataRow("Mazda", null, "C1", nameof(Car.Model), DisplayName = nameof(Car.Model))]
+    [DataRow("Mazda", "MX-5", null, nameof(Car.Id), DisplayName = nameof(Car.Id))]
     public async Task GivenAFieldIsNotProvided_WhenITryToAddACar(
-        string make, string model, string fieldName)
+        string make, string model, string id, string fieldName)
     {
         HttpClient client = _factory.CreateClient();
 
         HttpResponseMessage response
-            = await client.PostAsJsonAsync("/cars", CreateTestCar(make, model));
+            = await client.PostAsJsonAsync("/cars", CreateTestCar(make, model, id));
 
         ItDoesNotAddACar(response);
         await ItSaysFieldIsRequired(response, fieldName);
     }
 
     [TestMethod]
-    [DataRow("", "MX-5", nameof(Car.Make), DisplayName = nameof(Car.Make))]
-    [DataRow("Mazda", "", nameof(Car.Model), DisplayName = nameof(Car.Model))]
+    [DataRow("", "MX-5", "C1", nameof(Car.Make), DisplayName = nameof(Car.Make))]
+    [DataRow("Mazda", "", "C1", nameof(Car.Model), DisplayName = nameof(Car.Model))]
+    [DataRow("Mazda", "MX-5", "", nameof(Car.Id), DisplayName = nameof(Car.Id))]
     public async Task GivenAFieldIsEmpty_WhenITryToAddACar(
-        string make, string model, string fieldName)
+        string make, string model, string id, string fieldName)
     {
         HttpClient client = _factory.CreateClient();
 
         HttpResponseMessage response
-            = await client.PostAsJsonAsync("/cars", CreateTestCar(make, model));
+            = await client.PostAsJsonAsync("/cars", CreateTestCar(make, model, id));
 
         ItDoesNotAddACar(response);
         await ItSaysFieldIsRequired(response, fieldName);
@@ -49,13 +51,15 @@ public class CarTests
         Assert.AreEqual(HttpStatusCode.BadRequest, response.StatusCode);
     }
 
-    private static Car CreateTestCar(string? make = null, string? model = null)
+    private static Car CreateTestCar(string? make = null, string? model = null, string? id = null)
     {
         Car car = new();
 
         if (make != null) car.Make = make;
 
         if (model != null) car.Model = model;
+
+        if (id != null) car.Id = id;
 
         return car;
     }

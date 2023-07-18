@@ -10,51 +10,33 @@ public class CarTests
     private WebApplicationFactory<Program> _factory = new();
 
     [TestMethod]
-    public async Task GivenMakeIsNotProvided_WhenITryToAddACar()
-    {
-        HttpClient client = _factory.CreateClient();
-
-        HttpResponseMessage response 
-            = await client.PostAsJsonAsync("/cars", CreateTestCar(model: "MX-5"));
-
-        ItDoesNotAddACar(response);
-        await ItSaysFieldIsRequired(response, nameof(Car.Make));
-    }
-
-    [TestMethod]
-    public async Task GivenModelIsNotProvided_WhenITryToAddACar()
-    {
-        HttpClient client = _factory.CreateClient();
-
-        HttpResponseMessage response 
-            = await client.PostAsJsonAsync("/cars", CreateTestCar(make: "Mazda"));
-
-        ItDoesNotAddACar(response);
-        await ItSaysFieldIsRequired(response, nameof(Car.Model));
-    }
-
-    [TestMethod]
-    public async Task GivenMakeIsEmpty_WhenITryToAddACar()
-    {
-        HttpClient client = _factory.CreateClient();
-
-        HttpResponseMessage response 
-            = await client.PostAsJsonAsync("/cars", CreateTestCar(string.Empty, "MX-5"));
-
-        ItDoesNotAddACar(response);
-        await ItSaysFieldIsRequired(response, nameof(Car.Make));
-    }
-
-    [TestMethod]
-    public async Task GivenModelIsEmpty_WhenITryToAddACar()
+    [DataRow(null, "MX-5", nameof(Car.Make), DisplayName = nameof(Car.Make))]
+    [DataRow("Mazda", null, nameof(Car.Model), DisplayName = nameof(Car.Model))]
+    public async Task GivenAFieldIsNotProvided_WhenITryToAddACar(
+        string make, string model, string fieldName)
     {
         HttpClient client = _factory.CreateClient();
 
         HttpResponseMessage response
-            = await client.PostAsJsonAsync("/cars", CreateTestCar("Mazda", string.Empty));
+            = await client.PostAsJsonAsync("/cars", CreateTestCar(make, model));
 
         ItDoesNotAddACar(response);
-        await ItSaysFieldIsRequired(response, nameof(Car.Model));
+        await ItSaysFieldIsRequired(response, fieldName);
+    }
+
+    [TestMethod]
+    [DataRow("", "MX-5", nameof(Car.Make), DisplayName = nameof(Car.Make))]
+    [DataRow("Mazda", "", nameof(Car.Model), DisplayName = nameof(Car.Model))]
+    public async Task GivenAFieldIsEmpty_WhenITryToAddACar(
+        string make, string model, string fieldName)
+    {
+        HttpClient client = _factory.CreateClient();
+
+        HttpResponseMessage response
+            = await client.PostAsJsonAsync("/cars", CreateTestCar(make, model));
+
+        ItDoesNotAddACar(response);
+        await ItSaysFieldIsRequired(response, fieldName);
     }
 
     private static async Task ItSaysFieldIsRequired(HttpResponseMessage response, string parameter)

@@ -7,7 +7,7 @@ using Microsoft.AspNetCore.Mvc;
 public class CarsController : ControllerBase
 {
     [HttpPost]
-    public ActionResult Add()
+    public ActionResult Add(Car car)
     {
         return BadRequest();
     }

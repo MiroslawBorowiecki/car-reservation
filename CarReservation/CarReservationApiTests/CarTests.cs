@@ -10,16 +10,6 @@ public class CarTests
     private WebApplicationFactory<Program> _factory = new();
 
     [TestMethod]
-    public async Task GivenNoDataIsProvided_WhenITryToAddACar()
-    {
-        HttpClient client = _factory.CreateClient();
-
-        HttpResponseMessage response = await client.PostAsync("/cars", null);
-
-        ItDoesNotAddACar(response);
-    }
-
-    [TestMethod]
     public async Task GivenModelIsNotProvided_WhenITryToAddACar()
     {
         HttpClient client = _factory.CreateClient();
@@ -27,10 +17,22 @@ public class CarTests
         HttpResponseMessage response = await client.PostAsJsonAsync("/cars", new Car());
 
         ItDoesNotAddACar(response);
-        await ItSaysParameterIsRequired(response, nameof(Car.Make));
+        await ItSaysFieldIsRequired(response, nameof(Car.Make));
     }
 
-    private static async Task ItSaysParameterIsRequired(HttpResponseMessage response, string parameter)
+    [TestMethod]
+    public async Task GivenModelIsEmpty_WhenITryToAddACar()
+    {
+        HttpClient client = _factory.CreateClient();
+
+        HttpResponseMessage response 
+            = await client.PostAsJsonAsync("/cars", new Car() { Make = string.Empty });
+
+        ItDoesNotAddACar(response);
+        await ItSaysFieldIsRequired(response, nameof(Car.Make));
+    }
+
+    private static async Task ItSaysFieldIsRequired(HttpResponseMessage response, string parameter)
     {
         StringAssert.Contains(await response.Content.ReadAsStringAsync(), $"The {parameter} field is required.");
     }

@@ -7,7 +7,7 @@ namespace CarReservationApi.Tests;
 [TestClass]
 public class CarTests
 {
-    private WebApplicationFactory<Program> _factory = new();
+    private readonly WebApplicationFactory<Program> _factory = new();
 
     [TestMethod]
     [DataRow(null, "MX-5", "C1", nameof(Car.Make), DisplayName = nameof(Car.Make))]
@@ -41,9 +41,30 @@ public class CarTests
         await ItSaysFieldIsRequired(response, fieldName);
     }
 
-    private static async Task ItSaysFieldIsRequired(HttpResponseMessage response, string parameter)
+    [TestMethod]
+    public async Task GivenIdFormatIsIncorrect_WhenITryToAddACar()
     {
-        StringAssert.Contains(await response.Content.ReadAsStringAsync(), $"The {parameter} field is required.");
+        HttpClient client = _factory.CreateClient();
+        var car = CreateTestCar("Mazda", "MX-5", "1");
+
+        HttpResponseMessage response = await client.PostAsJsonAsync("/cars", car);
+
+        ItDoesNotAddACar(response);
+        await ItSaysFieldIsIncorrect(response, nameof(Car.Id));
+    }
+
+    private static async Task ItSaysFieldIsIncorrect(HttpResponseMessage response, string field)
+    {
+        StringAssert.Contains(
+            await response.Content.ReadAsStringAsync(),
+            $"The field {field} ");
+    }
+
+    private static async Task ItSaysFieldIsRequired(HttpResponseMessage response, string field)
+    {
+        StringAssert.Contains(
+            await response.Content.ReadAsStringAsync(), 
+            $"The {field} field is required.");
     }
 
     private static void ItDoesNotAddACar(HttpResponseMessage response)

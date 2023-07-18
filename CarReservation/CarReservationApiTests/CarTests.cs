@@ -1,8 +1,8 @@
-﻿namespace CarReservationApi.Tests;
-
-using System.Net;
+﻿using System.Net;
 using System.Net.Http.Json;
 using Microsoft.AspNetCore.Mvc.Testing;
+
+namespace CarReservationApi.Tests;
 
 [TestClass]
 public class CarTests
@@ -27,12 +27,12 @@ public class CarTests
         HttpResponseMessage response = await client.PostAsJsonAsync("/cars", new Car());
 
         ItDoesNotAddACar(response);
-        await ItSaysParameterIsMissing(response, nameof(Car.Make));
+        await ItSaysParameterIsRequired(response, nameof(Car.Make));
     }
 
-    private static async Task ItSaysParameterIsMissing(HttpResponseMessage response, string parameter)
+    private static async Task ItSaysParameterIsRequired(HttpResponseMessage response, string parameter)
     {
-        StringAssert.Contains(await response.Content.ReadAsStringAsync(), parameter);
+        StringAssert.Contains(await response.Content.ReadAsStringAsync(), $"The {parameter} field is required.");
     }
 
     private static void ItDoesNotAddACar(HttpResponseMessage response)

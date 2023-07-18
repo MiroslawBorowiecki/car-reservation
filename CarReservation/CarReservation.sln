@@ -1,0 +1,31 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.4.33801.306
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CarReservationApi", "CarReservationApi\CarReservationApi.csproj", "{001A99FA-F1ED-4F55-9178-B19D9C4072EB}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CarReservationApiTests", "CarReservationApiTests\CarReservationApiTests.csproj", "{890E790C-1D73-4777-8FD8-3D009B67FFBF}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{001A99FA-F1ED-4F55-9178-B19D9C4072EB}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{001A99FA-F1ED-4F55-9178-B19D9C4072EB}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{001A99FA-F1ED-4F55-9178-B19D9C4072EB}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{001A99FA-F1ED-4F55-9178-B19D9C4072EB}.Release|Any CPU.Build.0 = Release|Any CPU
+		{890E790C-1D73-4777-8FD8-3D009B67FFBF}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{890E790C-1D73-4777-8FD8-3D009B67FFBF}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{890E790C-1D73-4777-8FD8-3D009B67FFBF}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{890E790C-1D73-4777-8FD8-3D009B67FFBF}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {5D820D40-90EA-44C1-9163-1E75FE4C73E7}
+	EndGlobalSection
+EndGlobal

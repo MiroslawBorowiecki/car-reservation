@@ -1,4 +1,5 @@
-﻿using System.Net;
+﻿using System.Diagnostics.CodeAnalysis;
+using System.Net;
 using System.Net.Http.Json;
 using Microsoft.AspNetCore.Mvc.Testing;
 
@@ -7,6 +8,10 @@ namespace CarReservationApi.Tests;
 [TestClass]
 public class CarTests
 {
+    private const string BaseUri = "/cars";
+    private static readonly Car MazdaMx5 = CreateTestCar("Mazda", "MX-5", "C1");
+    private static readonly Car OpelAstra = CreateTestCar("Opel", "Astra", "C2");
+    private static readonly Car Peugeout206 = CreateTestCar("Peugeout", "206", "C3");
     private readonly WebApplicationFactory<Program> _factory = new();
 
     [TestMethod]
@@ -66,6 +71,34 @@ public class CarTests
         await ItShouldPreserveCarDetails(response, car);
     }
 
+    [TestMethod]
+    public async Task GivenSomeCars_WhenIGetThem()
+    {
+        HttpClient client = _factory.CreateClient();
+        await client.PostAsJsonAsync($"{BaseUri}", MazdaMx5);
+        await client.PostAsJsonAsync($"{BaseUri}", OpelAstra);
+        await client.PostAsJsonAsync($"{BaseUri}", Peugeout206);
+
+        HttpResponseMessage response = await client.GetAsync(BaseUri);
+        ItShouldSayOK(response);
+        await ItShouldReturnAllCars(response, new[] { MazdaMx5, OpelAstra, Peugeout206 });
+    }
+
+    // ID conflict, concurrency?, get nothing
+
+    private async Task ItShouldReturnAllCars(HttpResponseMessage response, Car[] cars)
+    {
+        var temp = await response.Content.ReadFromJsonAsync<IEnumerable<Car>>();
+        Assert.IsNotNull(temp);
+        var comparer = new CarComparer();
+        HashSet<Car> retrievedCars = new(temp, comparer);
+        HashSet<Car> expectedCars = new(cars, comparer);
+        Assert.IsTrue(expectedCars.SetEquals(retrievedCars));
+    }
+
+    private void ItShouldSayOK(HttpResponseMessage response) 
+        => Assert.AreEqual(HttpStatusCode.OK, response.StatusCode);
+
     private async Task ItShouldPreserveCarDetails(HttpResponseMessage response, Car car)
     {
         var responseCar = await response.Content.ReadFromJsonAsync<Car>();
@@ -105,5 +138,22 @@ public class CarTests
         if (id != null) car.Id = id;
 
         return car;
+    }
+
+    private class CarComparer : EqualityComparer<Car>
+    {
+        public override bool Equals(Car? x, Car? y)
+        {
+            if (x == null && y == null) return true;
+
+            if (x == null || y == null) return false;            
+
+            return x.Id == y.Id && x.Make == y.Make && x.Model == y.Model;
+        }
+
+        public override int GetHashCode([DisallowNull] Car obj)
+        {
+            return (obj.Id + obj.Make + obj.Model).GetHashCode();
+        }
     }
 }

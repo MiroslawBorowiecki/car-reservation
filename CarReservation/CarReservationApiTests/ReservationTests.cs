@@ -10,7 +10,15 @@ namespace CarReservationApi.Tests
 
         [TestMethod]
         public async Task GivenTheDateIsNotProvided_WhenITryToReserveACar()
-            => await TestMissingField(new() { }, nameof(ReserveCarRequest.Time));
+            => await TestMissingField(
+                new() { Duration = TimeSpan.FromHours(2) }, 
+                nameof(ReserveCarRequest.Time));
+
+        [TestMethod]
+        public async Task GivenTheDurationIsNotProvided_WhenITryToReserveACar()
+            => await TestMissingField(
+                new() { Time = DateTime.Now.AddHours(1) }, 
+                nameof(ReserveCarRequest.Duration));
 
         private async Task TestMissingField(ReserveCarRequest request, string fieldName)
         {

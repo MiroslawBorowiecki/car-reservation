@@ -27,4 +27,17 @@ public class CarsController : ControllerBase
 
     [HttpGet]
     public ActionResult<IEnumerable<Car>> GetAll() => _cars.Values.ToList();
+
+    [HttpPut]
+    [Route("{id}")]
+    public ActionResult Update([FromRoute] string id, UpdateCarRequest updateCarRequest)
+    {
+        if (!_cars.ContainsKey(id))
+            return NotFound();
+
+        var car = _cars[id];
+        car.Make = updateCarRequest.Make;
+        car.Model = updateCarRequest.Model;
+        return NoContent();
+    }
 }

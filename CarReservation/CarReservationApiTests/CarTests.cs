@@ -109,6 +109,40 @@ public class CarTests
         await ItShouldReturnNoCars(response);
     }
 
+    [TestMethod]
+    public async Task GivenACar_WhenIUpdateIt()
+    {
+        HttpClient client = _factory.CreateClient();
+        await client.PostAsJsonAsync(BaseUri, MazdaMx5);
+        await client.PostAsJsonAsync(BaseUri, OpelAstra);
+        await client.PostAsJsonAsync(BaseUri, Peugeout206);
+
+        UpdateCarRequest updateCarRequest = new() { Make = "Jaguar", Model = "F-Type" };
+        HttpResponseMessage response
+            = await client.PutAsJsonAsync($"{BaseUri}/{MazdaMx5.Id}", updateCarRequest);
+
+        ItShouldSayOK(response, HttpStatusCode.NoContent);
+
+        var allCars = new HashSet<Car>(
+            (await client.GetFromJsonAsync<IEnumerable<Car>>(BaseUri))!,
+            new CarComparer());
+        ItShouldReplaceTheCarData(
+            allCars, CreateTestCar(updateCarRequest.Make, updateCarRequest.Model, MazdaMx5.Id));
+        ItShouldNotTouchOtherCars(allCars, new[] {OpelAstra, Peugeout206});
+    }
+
+    private static void ItShouldNotTouchOtherCars(HashSet<Car> allCars, Car[] cars)
+    {
+        Assert.AreEqual(cars.Length + 1, allCars.Count);
+        Assert.IsTrue(allCars.IsProperSupersetOf(cars));
+    }
+
+    private static void ItShouldReplaceTheCarData(IEnumerable<Car> cars, Car updatedCar)
+    {
+        var foundCar = cars.Single(c => c.Id == updatedCar.Id);
+        Assert.AreEqual(updatedCar, foundCar, new CarComparer());
+    }
+
     private static async Task ItPreservesTheExistingCar(HttpClient client, Car mazdaMx5)
     {
         var existingCar = (await client.GetFromJsonAsync<IEnumerable<Car>>(BaseUri))?
@@ -134,8 +168,9 @@ public class CarTests
         Assert.IsTrue(expectedCars.SetEquals(retrievedCars));
     }
 
-    private static void ItShouldSayOK(HttpResponseMessage response) 
-        => Assert.AreEqual(HttpStatusCode.OK, response.StatusCode);
+    private static void ItShouldSayOK(
+        HttpResponseMessage response, HttpStatusCode expectedCode = HttpStatusCode.OK) 
+        => Assert.AreEqual(expectedCode, response.StatusCode);
 
     private static async Task ItShouldPreserveCarDetails(HttpResponseMessage response, Car car)
     {

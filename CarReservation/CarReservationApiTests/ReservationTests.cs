@@ -43,7 +43,7 @@ public class ReservationTests
         HttpResponseMessage response = await PostReservation(request);
 
         It.ShouldDenyTheAttempt(response);
-        await It.ShouldExplain(response, ReservationsController.TimeValidationError);
+        await It.ShouldExplain(response, ReserveCarRequestValidator.TimeValidationError);
     }
 
     private async Task TestDurationValidation(TimeSpan duration)
@@ -52,7 +52,7 @@ public class ReservationTests
         HttpResponseMessage response = await PostReservation(request);
 
         It.ShouldDenyTheAttempt(response);
-        await It.ShouldExplain(response, ReservationsController.DurationValidationError);
+        await It.ShouldExplain(response, ReserveCarRequestValidator.DurationValidationError);
     }
 
     private async Task TestMissingField(ReserveCarRequest request, string fieldName)

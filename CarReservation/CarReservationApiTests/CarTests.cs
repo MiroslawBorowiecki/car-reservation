@@ -124,18 +124,45 @@ public class CarTests
 
         ItShouldSayOK(response, HttpStatusCode.NoContent);
 
-        var allCars = new HashSet<Car>(
-            (await client.GetFromJsonAsync<IEnumerable<Car>>(BaseUri))!,
-            new CarComparer());
+        HashSet<Car> allCars = await GetComparableCars(client);
+        ItShouldNotChangeTheNumberOfCars(3, allCars.Count);
         ItShouldReplaceTheCarData(
             allCars, CreateTestCar(updateCarRequest.Make, updateCarRequest.Model, MazdaMx5.Id));
         ItShouldNotTouchOtherCars(allCars, new[] {OpelAstra, Peugeout206});
     }
 
+    [TestMethod]
+    public async Task GivenSomeCars_WhenITryToUpdateUsingUnknownId()
+    {
+        HttpClient client = _factory.CreateClient();
+        await client.PostAsJsonAsync(BaseUri, MazdaMx5);
+        await client.PostAsJsonAsync(BaseUri, Peugeout206);
+
+        UpdateCarRequest updateCarRequest = new() { Make = "Jaguar", Model = "F-Type" };
+        HttpResponseMessage response
+            = await client.PutAsJsonAsync($"{BaseUri}/C500", updateCarRequest);
+
+        ItShouldSayNotFound(response);
+        HashSet<Car> allCars = await GetComparableCars(client);
+        ItShouldNotChangeTheNumberOfCars(2, allCars.Count);
+        ItShouldNotTouchOtherCars(allCars, new[] { MazdaMx5, Peugeout206 });
+    }
+
+    private void ItShouldNotChangeTheNumberOfCars(int expected, int actual)
+        => Assert.AreEqual(expected, actual);
+
+    private static async Task<HashSet<Car>> GetComparableCars(HttpClient client)
+    {
+        return new HashSet<Car>(
+            (await client.GetFromJsonAsync<IEnumerable<Car>>(BaseUri))!, new CarComparer());
+    }
+
+    private static void ItShouldSayNotFound(HttpResponseMessage response) 
+        => Assert.AreEqual(HttpStatusCode.NotFound, response.StatusCode);
+
     private static void ItShouldNotTouchOtherCars(HashSet<Car> allCars, Car[] cars)
     {
-        Assert.AreEqual(cars.Length + 1, allCars.Count);
-        Assert.IsTrue(allCars.IsProperSupersetOf(cars));
+        Assert.IsTrue(allCars.IsSupersetOf(cars));
     }
 
     private static void ItShouldReplaceTheCarData(IEnumerable<Car> cars, Car updatedCar)

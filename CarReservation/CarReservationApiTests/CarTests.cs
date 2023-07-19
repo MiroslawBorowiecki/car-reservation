@@ -195,6 +195,25 @@ public class CarTests
         ItShouldNotTouchOtherCars(allCars, new[] { MazdaMx5, Peugeout206 });
     }
 
+    [TestMethod]
+    public async Task GivenSomeCars_WhenIDeleteOne()
+    {
+        HttpClient client = _factory.CreateClient();
+        await client.PostAsJsonAsync(BaseUri, MazdaMx5);
+        await client.PostAsJsonAsync(BaseUri, Peugeout206);
+        await client.PostAsJsonAsync(BaseUri, OpelAstra);
+
+        HttpResponseMessage response = await client.DeleteAsync($"{BaseUri}/{OpelAstra.Id}");
+
+        ItShouldAllowTheAttempt(response, HttpStatusCode.NoContent);
+        HashSet<Car> allCars = await GetComparableCars(client);
+        ItShouldChangeTheNumberOfCars(2, allCars.Count);
+        ItShouldNotTouchOtherCars(allCars, new[] { MazdaMx5, Peugeout206 });
+    }
+
+    private void ItShouldChangeTheNumberOfCars(int expected, int actual)
+        => Assert.AreEqual(expected, actual);
+
     private void ItShouldNotChangeTheNumberOfCars(int expected, int actual)
         => Assert.AreEqual(expected, actual);
 

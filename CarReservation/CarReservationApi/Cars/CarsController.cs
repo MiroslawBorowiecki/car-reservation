@@ -48,6 +48,7 @@ public class CarsController : ControllerBase
         if (!_cars.ContainsKey(id))
             return NotFound();
 
+        _cars.Remove(id);
         return NoContent();
     }
 }

@@ -28,6 +28,24 @@ public class ReservationTests
     public async Task GivenDurationIsMoreThan2Hours_WhenITryToReserveACar()
         => await TestDurationValidation(new TimeSpan(0, 2, 0, 0, 1));
 
+    [TestMethod]
+    public async Task GivenStartTimeIsMoreThan24HoursAhead_WhenITryToReserveACar()
+        => await TestTimeValidation(DateTime.Now.AddDays(1).AddSeconds(10));
+
+    [TestMethod]
+    public async Task GivenStartTimeIsLessThan5MinutesAhead_WhenITryToReserveACar()
+        => await TestTimeValidation(DateTime.Now.AddMinutes(5));
+
+    private async Task TestTimeValidation(DateTime time)
+    {
+        // TODO: Stub DateTime to test at the edges
+        var request = CreateRequest(time: time);
+        HttpResponseMessage response = await PostReservation(request);
+
+        It.ShouldDenyTheAttempt(response);
+        await It.ShouldExplain(response, ReservationsController.TimeValidationError);
+    }
+
     private async Task TestDurationValidation(TimeSpan duration)
     {
         var request = CreateRequest(duration: duration);

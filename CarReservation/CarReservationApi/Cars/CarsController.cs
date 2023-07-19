@@ -40,4 +40,14 @@ public class CarsController : ControllerBase
         car.Model = updateCarRequest.Model;
         return NoContent();
     }
+
+    [HttpDelete]
+    [Route("{id}")]
+    public ActionResult Remove([FromRoute] string id)
+    {
+        if (!_cars.ContainsKey(id))
+            return NotFound();
+
+        return NoContent();
+    }
 }

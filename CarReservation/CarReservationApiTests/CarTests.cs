@@ -180,6 +180,21 @@ public class CarTests
         await ItShouldRequireAField(response, fieldName);
     }
 
+    [TestMethod]
+    public async Task GivenSomeCars_WhenITryToDeleteUsingUnknownId()
+    {
+        HttpClient client = _factory.CreateClient();
+        await client.PostAsJsonAsync(BaseUri, MazdaMx5);
+        await client.PostAsJsonAsync(BaseUri, Peugeout206);
+
+        HttpResponseMessage response = await client.DeleteAsync($"{BaseUri}/C500");
+
+        ItShouldSayNotFound(response);
+        HashSet<Car> allCars = await GetComparableCars(client);
+        ItShouldNotChangeTheNumberOfCars(2, allCars.Count);
+        ItShouldNotTouchOtherCars(allCars, new[] { MazdaMx5, Peugeout206 });
+    }
+
     private void ItShouldNotChangeTheNumberOfCars(int expected, int actual)
         => Assert.AreEqual(expected, actual);
 

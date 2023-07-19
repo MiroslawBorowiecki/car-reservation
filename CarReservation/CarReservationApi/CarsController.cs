@@ -7,8 +7,8 @@ using Microsoft.AspNetCore.Mvc;
 public class CarsController : ControllerBase
 {
     [HttpPost]
-    public ActionResult Add(Car car)
+    public ActionResult<Car> Add(Car car)
     {
-        return BadRequest();
+        return Created($"/cars/{car.Id}", car);
     }
 }

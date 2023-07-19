@@ -53,24 +53,46 @@ public class CarTests
         await ItSaysFieldIsIncorrect(response, nameof(Car.Id));
     }
 
-    private static async Task ItSaysFieldIsIncorrect(HttpResponseMessage response, string field)
+    [TestMethod]
+    public async Task GivenProperData_WhenIAddACar()
     {
-        StringAssert.Contains(
+        HttpClient client = _factory.CreateClient();
+        Car car = CreateTestCar("Mazda", "MX-5", "C1");
+
+        HttpResponseMessage response = await client.PostAsJsonAsync("/cars", car);
+
+        ItAddsACar(response);
+        ItShouldShowCarLocation(response, $"/cars/{car.Id}");
+        await ItShouldPreserveCarDetails(response, car);
+    }
+
+    private async Task ItShouldPreserveCarDetails(HttpResponseMessage response, Car car)
+    {
+        var responseCar = await response.Content.ReadFromJsonAsync<Car>();
+        Assert.IsNotNull(responseCar);
+        Assert.AreEqual(car.Id, responseCar.Id);
+        Assert.AreEqual(car.Make, responseCar.Make);
+        Assert.AreEqual(car.Model, responseCar.Model);
+    }
+
+    private void ItShouldShowCarLocation(HttpResponseMessage response, string carLocation) 
+        => Assert.AreEqual(carLocation, response.Headers.Location?.ToString());
+
+    private void ItAddsACar(HttpResponseMessage response) 
+        => Assert.AreEqual(HttpStatusCode.Created, response.StatusCode);
+
+    private static async Task ItSaysFieldIsIncorrect(HttpResponseMessage response, string field) 
+        => StringAssert.Contains(
             await response.Content.ReadAsStringAsync(),
             $"The field {field} ");
-    }
 
-    private static async Task ItSaysFieldIsRequired(HttpResponseMessage response, string field)
-    {
-        StringAssert.Contains(
-            await response.Content.ReadAsStringAsync(), 
+    private static async Task ItSaysFieldIsRequired(HttpResponseMessage response, string field) 
+        => StringAssert.Contains(
+            await response.Content.ReadAsStringAsync(),
             $"The {field} field is required.");
-    }
 
-    private static void ItDoesNotAddACar(HttpResponseMessage response)
-    {
-        Assert.AreEqual(HttpStatusCode.BadRequest, response.StatusCode);
-    }
+    private static void ItDoesNotAddACar(HttpResponseMessage response) 
+        => Assert.AreEqual(HttpStatusCode.BadRequest, response.StatusCode);
 
     private static Car CreateTestCar(string? make = null, string? model = null, string? id = null)
     {

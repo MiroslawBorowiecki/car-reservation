@@ -80,11 +80,30 @@ public class CarTests
         await client.PostAsJsonAsync($"{BaseUri}", Peugeout206);
 
         HttpResponseMessage response = await client.GetAsync(BaseUri);
+        
         ItShouldSayOK(response);
         await ItShouldReturnAllCars(response, new[] { MazdaMx5, OpelAstra, Peugeout206 });
     }
 
-    // ID conflict, concurrency?, get nothing
+    [TestMethod]
+    public async Task GivenNoCarsAddedYet_WhenITryToGetThem()
+    {
+        HttpClient client = _factory.CreateClient();
+
+        HttpResponseMessage response = await client.GetAsync(BaseUri);
+
+        ItShouldSayOK(response);
+        await ItShouldReturnNoCars(response);
+    }
+
+    private async Task ItShouldReturnNoCars(HttpResponseMessage response)
+    {
+        var results = await response.Content.ReadFromJsonAsync<IEnumerable<Car>>();
+        Assert.IsNotNull(results);
+        Assert.AreEqual(0, results.Count());
+    }
+
+    // ID conflict, concurrency?,
 
     private async Task ItShouldReturnAllCars(HttpResponseMessage response, Car[] cars)
     {

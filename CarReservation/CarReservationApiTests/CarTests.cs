@@ -80,7 +80,7 @@ public class CarTests
         await client.PostAsJsonAsync($"{BaseUri}", Peugeout206);
 
         HttpResponseMessage response = await client.GetAsync(BaseUri);
-        
+
         ItShouldSayOK(response);
         await ItShouldReturnAllCars(response, new[] { MazdaMx5, OpelAstra, Peugeout206 });
     }
@@ -96,7 +96,7 @@ public class CarTests
         await ItShouldReturnNoCars(response);
     }
 
-    private async Task ItShouldReturnNoCars(HttpResponseMessage response)
+    private static async Task ItShouldReturnNoCars(HttpResponseMessage response)
     {
         var results = await response.Content.ReadFromJsonAsync<IEnumerable<Car>>();
         Assert.IsNotNull(results);
@@ -105,7 +105,7 @@ public class CarTests
 
     // ID conflict, concurrency?,
 
-    private async Task ItShouldReturnAllCars(HttpResponseMessage response, Car[] cars)
+    private static async Task ItShouldReturnAllCars(HttpResponseMessage response, Car[] cars)
     {
         var temp = await response.Content.ReadFromJsonAsync<IEnumerable<Car>>();
         Assert.IsNotNull(temp);
@@ -115,10 +115,10 @@ public class CarTests
         Assert.IsTrue(expectedCars.SetEquals(retrievedCars));
     }
 
-    private void ItShouldSayOK(HttpResponseMessage response) 
+    private static void ItShouldSayOK(HttpResponseMessage response) 
         => Assert.AreEqual(HttpStatusCode.OK, response.StatusCode);
 
-    private async Task ItShouldPreserveCarDetails(HttpResponseMessage response, Car car)
+    private static async Task ItShouldPreserveCarDetails(HttpResponseMessage response, Car car)
     {
         var responseCar = await response.Content.ReadFromJsonAsync<Car>();
         Assert.IsNotNull(responseCar);
@@ -130,7 +130,7 @@ public class CarTests
     private void ItShouldShowCarLocation(HttpResponseMessage response, string carLocation) 
         => Assert.AreEqual(carLocation, response.Headers.Location?.ToString());
 
-    private void ItAddsACar(HttpResponseMessage response) 
+    private static void ItAddsACar(HttpResponseMessage response) 
         => Assert.AreEqual(HttpStatusCode.Created, response.StatusCode);
 
     private static async Task ItSaysFieldIsIncorrect(HttpResponseMessage response, string field) 

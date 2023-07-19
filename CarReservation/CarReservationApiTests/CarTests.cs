@@ -52,7 +52,8 @@ public class CarTests
         HttpResponseMessage response = await client.PostAsJsonAsync("/cars", car);
 
         It.ShouldDenyTheAttempt(response);
-        await ItShouldNameTheIncorrectField(response, nameof(Car.Id));
+        await It.ShouldExplain(response, 
+            $"The field {nameof(Car.Id)} must match the regular expression");
     }
 
     [TestMethod]
@@ -273,11 +274,6 @@ public class CarTests
 
     private void ItShouldShowCarLocation(HttpResponseMessage response, string carLocation) 
         => Assert.AreEqual(carLocation, response.Headers.Location?.ToString());
-
-    private static async Task ItShouldNameTheIncorrectField(
-        HttpResponseMessage response, string field) 
-        => StringAssert.Contains(
-            await response.Content.ReadAsStringAsync(), $"The field {field} ");
 
     private static Car CreateTestCar(string? make = null, string? model = null, string? id = null)
     {

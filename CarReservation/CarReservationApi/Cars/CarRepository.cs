@@ -1,6 +1,5 @@
-﻿namespace CarReservationApi.Cars
+﻿namespace CarReservationApi.Cars;
+
+public class CarRepository : Dictionary<string, Car>
 {
-    public class CarRepository : Dictionary<string, Car>
-    {
-    }
 }

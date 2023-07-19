@@ -17,9 +17,7 @@ public class CarsController : ControllerBase
     public ActionResult<Car> Add(Car car)
     {
         if (_cars.ContainsKey(car.Id))
-        {
             return Conflict();
-        }
 
         _cars.Add(car.Id, car);
         return Created($"/cars/{car.Id}", car);
@@ -28,6 +26,10 @@ public class CarsController : ControllerBase
     [HttpGet]
     public ActionResult<IEnumerable<Car>> GetAll() => _cars.Values.ToList();
 
+    // I didn't provide any GET /{id} method, as the specification did not list as required.
+
+    // I have assumed that Update doesn't include car's ID for simplicity.
+    // The same can still be achieved by adding new car first and then removing the previous one.
     [HttpPut]
     [Route("{id}")]
     public ActionResult Update([FromRoute] string id, UpdateCarRequest updateCarRequest)

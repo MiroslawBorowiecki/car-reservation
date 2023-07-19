@@ -1,8 +1,4 @@
-﻿using System.Diagnostics.CodeAnalysis;
-using System.Net;
-using System.Net.Http.Json;
-using Microsoft.AspNetCore.Mvc.Testing;
-using CarReservationApi.Cars;
+﻿using CarReservationApi.Cars;
 
 namespace CarReservationApi.Tests;
 
@@ -27,8 +23,8 @@ public class CarTests
         HttpResponseMessage response
             = await client.PostAsJsonAsync("/cars", CreateTestCar(make, model, id));
 
-        ItShouldDenyTheAttempt(response);
-        await ItShouldRequireAField(response, fieldName);
+        It.ShouldDenyTheAttempt(response);
+        await It.ShouldRequireAField(response, fieldName);
     }
 
     [TestMethod]
@@ -43,8 +39,8 @@ public class CarTests
         HttpResponseMessage response
             = await client.PostAsJsonAsync("/cars", CreateTestCar(make, model, id));
 
-        ItShouldDenyTheAttempt(response);
-        await ItShouldRequireAField(response, fieldName);
+        It.ShouldDenyTheAttempt(response);
+        await It.ShouldRequireAField(response, fieldName);
     }
 
     [TestMethod]
@@ -55,7 +51,7 @@ public class CarTests
 
         HttpResponseMessage response = await client.PostAsJsonAsync("/cars", car);
 
-        ItShouldDenyTheAttempt(response);
+        It.ShouldDenyTheAttempt(response);
         await ItShouldNameTheIncorrectField(response, nameof(Car.Id));
     }
 
@@ -81,7 +77,7 @@ public class CarTests
         var idConflictCar = CreateTestCar("make", "model", MazdaMx5.Id);
         HttpResponseMessage response = await client.PostAsJsonAsync(BaseUri, idConflictCar);
 
-        ItShouldDenyTheAttempt(response, HttpStatusCode.Conflict);
+        It.ShouldDenyTheAttempt(response, HttpStatusCode.Conflict);
         await ItPreservesTheExistingCar(client, MazdaMx5);
     }
 
@@ -160,8 +156,8 @@ public class CarTests
         HttpResponseMessage response
             = await client.PutAsJsonAsync($"{BaseUri}/C1", request);
 
-        ItShouldDenyTheAttempt(response);
-        await ItShouldRequireAField(response, fieldName);
+        It.ShouldDenyTheAttempt(response);
+        await It.ShouldRequireAField(response, fieldName);
     }
 
     [TestMethod]
@@ -176,8 +172,8 @@ public class CarTests
         HttpResponseMessage response
             = await client.PutAsJsonAsync($"{BaseUri}/C1", request);
 
-        ItShouldDenyTheAttempt(response);
-        await ItShouldRequireAField(response, fieldName);
+        It.ShouldDenyTheAttempt(response);
+        await It.ShouldRequireAField(response, fieldName);
     }
 
     [TestMethod]
@@ -282,15 +278,6 @@ public class CarTests
         HttpResponseMessage response, string field) 
         => StringAssert.Contains(
             await response.Content.ReadAsStringAsync(), $"The field {field} ");
-
-    private static async Task ItShouldRequireAField(HttpResponseMessage response, string field) 
-        => StringAssert.Contains(
-            await response.Content.ReadAsStringAsync(),
-            $"The {field} field is required.");
-
-    private static void ItShouldDenyTheAttempt(
-        HttpResponseMessage response, HttpStatusCode expectedCode = HttpStatusCode.BadRequest) 
-        => Assert.AreEqual(expectedCode, response.StatusCode);
 
     private static Car CreateTestCar(string? make = null, string? model = null, string? id = null)
     {

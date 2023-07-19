@@ -72,6 +72,19 @@ public class CarTests
     }
 
     [TestMethod]
+    public async Task GivenACarWithProvidedIdAlreadyExists_WhenITryToAddACar()
+    {
+        HttpClient client = _factory.CreateClient();
+        await client.PostAsJsonAsync(BaseUri, MazdaMx5);
+
+        var idConflictCar = CreateTestCar("make", "model", MazdaMx5.Id);
+        HttpResponseMessage response = await client.PostAsJsonAsync(BaseUri, idConflictCar);
+
+        ItDoesNotAddACar(response, HttpStatusCode.Conflict);
+        await ItPreservesTheExistingCar(client, MazdaMx5);
+    }
+
+    [TestMethod]
     public async Task GivenSomeCars_WhenIGetThem()
     {
         HttpClient client = _factory.CreateClient();
@@ -96,14 +109,20 @@ public class CarTests
         await ItShouldReturnNoCars(response);
     }
 
+    private static async Task ItPreservesTheExistingCar(HttpClient client, Car mazdaMx5)
+    {
+        var existingCar = (await client.GetFromJsonAsync<IEnumerable<Car>>(BaseUri))?
+            .SingleOrDefault();
+        Assert.IsNotNull(existingCar);
+        Assert.AreEqual(mazdaMx5, existingCar, new CarComparer());
+    }
+
     private static async Task ItShouldReturnNoCars(HttpResponseMessage response)
     {
         var results = await response.Content.ReadFromJsonAsync<IEnumerable<Car>>();
         Assert.IsNotNull(results);
         Assert.AreEqual(0, results.Count());
     }
-
-    // ID conflict, concurrency?,
 
     private static async Task ItShouldReturnAllCars(HttpResponseMessage response, Car[] cars)
     {
@@ -143,8 +162,9 @@ public class CarTests
             await response.Content.ReadAsStringAsync(),
             $"The {field} field is required.");
 
-    private static void ItDoesNotAddACar(HttpResponseMessage response) 
-        => Assert.AreEqual(HttpStatusCode.BadRequest, response.StatusCode);
+    private static void ItDoesNotAddACar(
+        HttpResponseMessage response, HttpStatusCode expectedCode = HttpStatusCode.BadRequest) 
+        => Assert.AreEqual(expectedCode, response.StatusCode);
 
     private static Car CreateTestCar(string? make = null, string? model = null, string? id = null)
     {

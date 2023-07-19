@@ -16,6 +16,11 @@ public class CarsController : ControllerBase
     [HttpPost]
     public ActionResult<Car> Add(Car car)
     {
+        if (_cars.ContainsKey(car.Id))
+        {
+            return Conflict();
+        }
+
         _cars.Add(car.Id, car);
         return Created($"/cars/{car.Id}", car);
     }

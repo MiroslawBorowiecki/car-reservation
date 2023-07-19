@@ -1,6 +1,6 @@
 ﻿using System.ComponentModel.DataAnnotations;
 
-namespace CarReservationApi
+namespace CarReservationApi.Cars
 {
     public class UpdateCarRequest
     {

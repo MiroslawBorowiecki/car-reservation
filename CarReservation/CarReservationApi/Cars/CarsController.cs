@@ -1,4 +1,4 @@
-﻿namespace CarReservationApi;
+﻿namespace CarReservationApi.Cars;
 
 using Microsoft.AspNetCore.Mvc;
 

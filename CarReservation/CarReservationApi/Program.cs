@@ -1,4 +1,4 @@
-using CarReservationApi;
+using CarReservationApi.Cars;
 
 var builder = WebApplication.CreateBuilder(args);
 

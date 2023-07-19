@@ -27,8 +27,8 @@ public class CarTests
         HttpResponseMessage response
             = await client.PostAsJsonAsync("/cars", CreateTestCar(make, model, id));
 
-        ItDoesNotAddACar(response);
-        await ItSaysFieldIsRequired(response, fieldName);
+        ItShouldDenyTheAttempt(response);
+        await ItShouldRequireAField(response, fieldName);
     }
 
     [TestMethod]
@@ -43,8 +43,8 @@ public class CarTests
         HttpResponseMessage response
             = await client.PostAsJsonAsync("/cars", CreateTestCar(make, model, id));
 
-        ItDoesNotAddACar(response);
-        await ItSaysFieldIsRequired(response, fieldName);
+        ItShouldDenyTheAttempt(response);
+        await ItShouldRequireAField(response, fieldName);
     }
 
     [TestMethod]
@@ -55,8 +55,8 @@ public class CarTests
 
         HttpResponseMessage response = await client.PostAsJsonAsync("/cars", car);
 
-        ItDoesNotAddACar(response);
-        await ItSaysFieldIsIncorrect(response, nameof(Car.Id));
+        ItShouldDenyTheAttempt(response);
+        await ItShouldNameTheIncorrectField(response, nameof(Car.Id));
     }
 
     [TestMethod]
@@ -67,7 +67,7 @@ public class CarTests
 
         HttpResponseMessage response = await client.PostAsJsonAsync("/cars", car);
 
-        ItAddsACar(response);
+        ItShouldAllowTheAttempt(response, HttpStatusCode.Created);
         ItShouldShowCarLocation(response, $"/cars/{car.Id}");
         await ItShouldPreserveCarDetails(response, car);
     }
@@ -81,7 +81,7 @@ public class CarTests
         var idConflictCar = CreateTestCar("make", "model", MazdaMx5.Id);
         HttpResponseMessage response = await client.PostAsJsonAsync(BaseUri, idConflictCar);
 
-        ItDoesNotAddACar(response, HttpStatusCode.Conflict);
+        ItShouldDenyTheAttempt(response, HttpStatusCode.Conflict);
         await ItPreservesTheExistingCar(client, MazdaMx5);
     }
 
@@ -95,7 +95,7 @@ public class CarTests
 
         HttpResponseMessage response = await client.GetAsync(BaseUri);
 
-        ItShouldSayOK(response);
+        ItShouldAllowTheAttempt(response);
         await ItShouldReturnAllCars(response, new[] { MazdaMx5, OpelAstra, Peugeout206 });
     }
 
@@ -106,7 +106,7 @@ public class CarTests
 
         HttpResponseMessage response = await client.GetAsync(BaseUri);
 
-        ItShouldSayOK(response);
+        ItShouldAllowTheAttempt(response);
         await ItShouldReturnNoCars(response);
     }
 
@@ -122,7 +122,7 @@ public class CarTests
         HttpResponseMessage response
             = await client.PutAsJsonAsync($"{BaseUri}/{MazdaMx5.Id}", updateCarRequest);
 
-        ItShouldSayOK(response, HttpStatusCode.NoContent);
+        ItShouldAllowTheAttempt(response, HttpStatusCode.NoContent);
 
         HashSet<Car> allCars = await GetComparableCars(client);
         ItShouldNotChangeTheNumberOfCars(3, allCars.Count);
@@ -146,6 +146,38 @@ public class CarTests
         HashSet<Car> allCars = await GetComparableCars(client);
         ItShouldNotChangeTheNumberOfCars(2, allCars.Count);
         ItShouldNotTouchOtherCars(allCars, new[] { MazdaMx5, Peugeout206 });
+    }
+
+    [TestMethod]
+    [DataRow(null, "MX-5", nameof(Car.Make), DisplayName = nameof(Car.Make))]
+    [DataRow("Mazda", null, nameof(Car.Model), DisplayName = nameof(Car.Model))]
+    public async Task GivenAFieldIsNotProvided_WhenITryToUpdateACar(
+        string make, string model, string fieldName)
+    {
+        HttpClient client = _factory.CreateClient();
+
+        UpdateCarRequest request = new () { Make = make, Model = model };
+        HttpResponseMessage response
+            = await client.PutAsJsonAsync($"{BaseUri}/C1", request);
+
+        ItShouldDenyTheAttempt(response);
+        await ItShouldRequireAField(response, fieldName);
+    }
+
+    [TestMethod]
+    [DataRow("", "MX-5", nameof(Car.Make), DisplayName = nameof(Car.Make))]
+    [DataRow("Mazda", "",nameof(Car.Model), DisplayName = nameof(Car.Model))]
+    public async Task GivenAFieldIsEmpty_WhenITryToUpdateACar(
+        string make, string model, string fieldName)
+    {
+        HttpClient client = _factory.CreateClient();
+
+        UpdateCarRequest request = new() { Make = make, Model = model };
+        HttpResponseMessage response
+            = await client.PutAsJsonAsync($"{BaseUri}/C1", request);
+
+        ItShouldDenyTheAttempt(response);
+        await ItShouldRequireAField(response, fieldName);
     }
 
     private void ItShouldNotChangeTheNumberOfCars(int expected, int actual)
@@ -196,7 +228,7 @@ public class CarTests
         Assert.IsTrue(expectedCars.SetEquals(retrievedCars));
     }
 
-    private static void ItShouldSayOK(
+    private static void ItShouldAllowTheAttempt(
         HttpResponseMessage response, HttpStatusCode expectedCode = HttpStatusCode.OK) 
         => Assert.AreEqual(expectedCode, response.StatusCode);
 
@@ -212,20 +244,17 @@ public class CarTests
     private void ItShouldShowCarLocation(HttpResponseMessage response, string carLocation) 
         => Assert.AreEqual(carLocation, response.Headers.Location?.ToString());
 
-    private static void ItAddsACar(HttpResponseMessage response) 
-        => Assert.AreEqual(HttpStatusCode.Created, response.StatusCode);
-
-    private static async Task ItSaysFieldIsIncorrect(HttpResponseMessage response, string field) 
+    private static async Task ItShouldNameTheIncorrectField(
+        HttpResponseMessage response, string field) 
         => StringAssert.Contains(
-            await response.Content.ReadAsStringAsync(),
-            $"The field {field} ");
+            await response.Content.ReadAsStringAsync(), $"The field {field} ");
 
-    private static async Task ItSaysFieldIsRequired(HttpResponseMessage response, string field) 
+    private static async Task ItShouldRequireAField(HttpResponseMessage response, string field) 
         => StringAssert.Contains(
             await response.Content.ReadAsStringAsync(),
             $"The {field} field is required.");
 
-    private static void ItDoesNotAddACar(
+    private static void ItShouldDenyTheAttempt(
         HttpResponseMessage response, HttpStatusCode expectedCode = HttpStatusCode.BadRequest) 
         => Assert.AreEqual(expectedCode, response.StatusCode);
 

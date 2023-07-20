@@ -39,7 +39,7 @@ public class ReservationTests
     [TestMethod]
     public async Task GivenNoCarsAddedYet_WhenITryToReserveACar()
     {
-        var request = CreateRequest(DateTime.Now.AddHours(1), TimeSpan.FromHours(1));
+        var request = CreateValidRequest(DateTime.Now.AddHours(1), TimeSpan.FromHours(1));
         
         var response = await PostReservation(request);
 
@@ -47,10 +47,27 @@ public class ReservationTests
         await It.ShouldExplain(response, ReservationsController.NoCarsAvailable);
     }
 
+    [TestMethod]
+    public async Task GivenOneCarAndAConflictingReservation_WhenITryToReserveACar()
+    {
+        // Arrange
+        HttpClient client = _factory.CreateClient();
+        await client.PostAsJsonAsync(CarTests.BaseUri, CarTests.MazdaMx5);
+        ReserveCarRequest reservation = CreateValidRequest();
+        await client.PostAsJsonAsync(BaseUri, reservation);
+
+        // Act
+        HttpResponseMessage response = await client.PostAsJsonAsync(BaseUri, reservation);
+
+        // Assert
+        It.ShouldDenyTheAttempt(response, HttpStatusCode.Conflict);
+        await It.ShouldExplain(response, ReservationsController.NoCarsAvailable);
+    }
+
     private async Task TestTimeValidation(DateTime time)
     {
         // TODO: Stub DateTime to test at the edges
-        var request = CreateRequest(time: time);
+        var request = CreateValidRequest(time: time);
         HttpResponseMessage response = await PostReservation(request);
 
         It.ShouldDenyTheAttempt(response);
@@ -59,7 +76,7 @@ public class ReservationTests
 
     private async Task TestDurationValidation(TimeSpan duration)
     {
-        var request = CreateRequest(duration: duration);
+        var request = CreateValidRequest(duration: duration);
         HttpResponseMessage response = await PostReservation(request);
 
         It.ShouldDenyTheAttempt(response);
@@ -77,8 +94,10 @@ public class ReservationTests
     private async Task<HttpResponseMessage> PostReservation(ReserveCarRequest request) 
         => await _factory.CreateClient().PostAsJsonAsync(BaseUri, request);
 
-    private static ReserveCarRequest CreateRequest(
-        DateTime? time = null, TimeSpan? duration = null) => new () { 
-            Time = time ?? DateTime.Now.AddHours(1), 
-            Duration = duration ?? TimeSpan.FromHours(1)};
+    private static ReserveCarRequest CreateValidRequest(
+        DateTime? time = null, TimeSpan? duration = null) => new() 
+        {
+            Time = time ?? DateTime.Now.AddHours(1),
+            Duration = duration ?? TimeSpan.FromHours(1) 
+        };
 }

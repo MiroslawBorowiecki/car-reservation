@@ -5,10 +5,10 @@ namespace CarReservationApi.Tests;
 [TestClass]
 public class CarTests
 {
-    private const string BaseUri = "/cars";
-    private static readonly Car MazdaMx5 = CreateTestCar("Mazda", "MX-5", "C1");
-    private static readonly Car OpelAstra = CreateTestCar("Opel", "Astra", "C2");
-    private static readonly Car Peugeout206 = CreateTestCar("Peugeout", "206", "C3");
+    public const string BaseUri = "/cars";
+    public static readonly Car MazdaMx5 = CreateTestCar("Mazda", "MX-5", "C1");
+    public static readonly Car OpelAstra = CreateTestCar("Opel", "Astra", "C2");
+    public static readonly Car Peugeout206 = CreateTestCar("Peugeout", "206", "C3");
     private readonly WebApplicationFactory<Program> _factory = new();
 
     [TestMethod]

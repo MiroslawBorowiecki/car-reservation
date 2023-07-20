@@ -36,6 +36,17 @@ public class ReservationTests
     public async Task GivenStartTimeIsLessThan5MinutesAhead_WhenITryToReserveACar()
         => await TestTimeValidation(DateTime.Now.AddMinutes(5));
 
+    [TestMethod]
+    public async Task GivenNoCarsAddedYet_WhenITryToReserveACar()
+    {
+        var request = CreateRequest(DateTime.Now.AddHours(1), TimeSpan.FromHours(1));
+        
+        var response = await PostReservation(request);
+
+        It.ShouldDenyTheAttempt(response, HttpStatusCode.Conflict);
+        await It.ShouldExplain(response, ReservationsController.NoCarsAvailable);
+    }
+
     private async Task TestTimeValidation(DateTime time)
     {
         // TODO: Stub DateTime to test at the edges

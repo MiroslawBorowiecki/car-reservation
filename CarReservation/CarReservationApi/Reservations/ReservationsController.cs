@@ -6,6 +6,9 @@ namespace CarReservationApi.Reservations;
 [Route("[controller]")]
 public class ReservationsController : ControllerBase
 {
+    public const string NoCarsAvailable 
+        = "Booking with the given time and duration is not possible - no cars are available.";
+
     [HttpPost]
     public ActionResult ReserveCar(ReserveCarRequest request)
     {
@@ -18,6 +21,6 @@ public class ReservationsController : ControllerBase
             return ValidationProblem(e.Message);
         }
 
-        return Problem("not implemented yet");
+        return Conflict(NoCarsAvailable);
     }
 }

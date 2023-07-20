@@ -93,7 +93,8 @@ public class CarTests
         HttpResponseMessage response = await client.GetAsync(BaseUri);
 
         It.ShouldAllowTheAttempt(response);
-        await ItShouldReturnAllCars(response, new[] { MazdaMx5, OpelAstra, Peugeout206 });
+        await response.ShouldReturnAll(
+            new[] { MazdaMx5, OpelAstra, Peugeout206 }, new CarComparer());
     }
 
     [TestMethod]
@@ -211,7 +212,7 @@ public class CarTests
     private static void ItShouldChangeTheNumberOfCars(int expected, int actual)
         => Assert.AreEqual(expected, actual);
 
-    private void ItShouldNotChangeTheNumberOfCars(int expected, int actual)
+    private static void ItShouldNotChangeTheNumberOfCars(int expected, int actual)
         => Assert.AreEqual(expected, actual);
 
     private static async Task<HashSet<Car>> GetComparableCars(HttpClient client)

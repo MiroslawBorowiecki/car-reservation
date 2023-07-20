@@ -68,7 +68,7 @@ public class ReservationTests
     public async Task GivenOnlyOneUnreservedCar_WhenIReserveACar()
     {
         HttpClient client = _factory.CreateClient();
-        await client.PostAsJsonAsync(CarTests.BaseUri, CarTests.MazdaMx5);
+        await client.Setup(CarTests.BaseUri, CarTests.MazdaMx5);
         ReserveCarRequest reservationRequest = CreateValidRequest();
 
         HttpResponseMessage response = await client.PostAsJsonAsync(BaseUri, reservationRequest);
@@ -87,6 +87,30 @@ public class ReservationTests
 
         It.ShouldAllowTheAttempt(responseMessage);
         await It.ShouldReturnNo<ReservationResponse>(responseMessage);
+    }
+
+    [TestMethod]
+    public async Task GivenACoupleReservations_WhenIGetThem()
+    {
+        HttpClient client = _factory.CreateClient();
+        var cars = new[] { CarTests.MazdaMx5, CarTests.MazdaMx5, CarTests.MazdaMx5 };
+        await client.Setup(CarTests.BaseUri, cars);
+        var now = DateTime.Now;
+        ReserveCarRequest[] requests = new[]
+        {
+            CreateValidRequest(now.AddHours(1)),
+            CreateValidRequest(now.AddHours(3)),
+            CreateValidRequest(now.AddHours(5))
+        };
+        await client.Setup(BaseUri, requests);
+
+        HttpResponseMessage httpResponse = await client.GetAsync(BaseUri);
+
+        It.ShouldAllowTheAttempt(httpResponse);
+
+        IEnumerable<ReservationResponse> expected 
+            = requests.Zip(cars).Select(z => ReservationResponse.Create(z.First, z.Second));
+        await httpResponse.ShouldReturnAll(expected, ReservationComparer.That);
     }
 
     private static async Task ItShouldReturnReservationDetails(

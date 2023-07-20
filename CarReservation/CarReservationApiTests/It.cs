@@ -1,4 +1,5 @@
 ﻿using CarReservationApi.Cars;
+using static CarReservationApi.Tests.CarTests;
 
 namespace CarReservationApi.Tests;
 
@@ -28,5 +29,12 @@ public static class It
         var results = await response.Content.ReadFromJsonAsync<IEnumerable<T>>();
         Assert.IsNotNull(results);
         Assert.AreEqual(0, results.Count());
+    }
+
+    public static void ShouldReturnAll<T>(
+        IEnumerable<T> expected, IEnumerable<T> actual, IEqualityComparer<T> comparer)
+    {        
+        HashSet<T> expectedSet = new(expected, comparer);
+        Assert.IsTrue(expectedSet.SetEquals(actual), $"Not all {typeof(T).Name}s were returned.");
     }
 }

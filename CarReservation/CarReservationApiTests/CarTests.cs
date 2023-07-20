@@ -64,8 +64,8 @@ public class CarTests
 
         HttpResponseMessage response = await client.PostAsJsonAsync("/cars", car);
 
-        ItShouldAllowTheAttempt(response, HttpStatusCode.Created);
-        ItShouldShowCarLocation(response, $"/cars/{car.Id}");
+        It.ShouldAllowTheAttempt(response, HttpStatusCode.Created);
+        It.ShouldShowTheLocation(response, $"/cars/{car.Id}");
         await ItShouldPreserveCarDetails(response, car);
     }
 
@@ -92,7 +92,7 @@ public class CarTests
 
         HttpResponseMessage response = await client.GetAsync(BaseUri);
 
-        ItShouldAllowTheAttempt(response);
+        It.ShouldAllowTheAttempt(response);
         await ItShouldReturnAllCars(response, new[] { MazdaMx5, OpelAstra, Peugeout206 });
     }
 
@@ -103,7 +103,7 @@ public class CarTests
 
         HttpResponseMessage response = await client.GetAsync(BaseUri);
 
-        ItShouldAllowTheAttempt(response);
+        It.ShouldAllowTheAttempt(response);
         await ItShouldReturnNoCars(response);
     }
 
@@ -119,7 +119,7 @@ public class CarTests
         HttpResponseMessage response
             = await client.PutAsJsonAsync($"{BaseUri}/{MazdaMx5.Id}", updateCarRequest);
 
-        ItShouldAllowTheAttempt(response, HttpStatusCode.NoContent);
+        It.ShouldAllowTheAttempt(response, HttpStatusCode.NoContent);
 
         HashSet<Car> allCars = await GetComparableCars(client);
         ItShouldNotChangeTheNumberOfCars(3, allCars.Count);
@@ -202,7 +202,7 @@ public class CarTests
 
         HttpResponseMessage response = await client.DeleteAsync($"{BaseUri}/{OpelAstra.Id}");
 
-        ItShouldAllowTheAttempt(response, HttpStatusCode.NoContent);
+        It.ShouldAllowTheAttempt(response, HttpStatusCode.NoContent);
         HashSet<Car> allCars = await GetComparableCars(client);
         ItShouldChangeTheNumberOfCars(2, allCars.Count);
         ItShouldNotTouchOtherCars(allCars, new[] { MazdaMx5, Peugeout206 });
@@ -259,10 +259,6 @@ public class CarTests
         Assert.IsTrue(expectedCars.SetEquals(retrievedCars));
     }
 
-    private static void ItShouldAllowTheAttempt(
-        HttpResponseMessage response, HttpStatusCode expectedCode = HttpStatusCode.OK) 
-        => Assert.AreEqual(expectedCode, response.StatusCode);
-
     private static async Task ItShouldPreserveCarDetails(HttpResponseMessage response, Car car)
     {
         var responseCar = await response.Content.ReadFromJsonAsync<Car>();
@@ -271,9 +267,6 @@ public class CarTests
         Assert.AreEqual(car.Make, responseCar.Make);
         Assert.AreEqual(car.Model, responseCar.Model);
     }
-
-    private void ItShouldShowCarLocation(HttpResponseMessage response, string carLocation) 
-        => Assert.AreEqual(carLocation, response.Headers.Location?.ToString());
 
     private static Car CreateTestCar(string? make = null, string? model = null, string? id = null)
     {
@@ -288,7 +281,7 @@ public class CarTests
         return car;
     }
 
-    private class CarComparer : EqualityComparer<Car>
+    public class CarComparer : EqualityComparer<Car>
     {
         public override bool Equals(Car? x, Car? y)
         {

@@ -64,6 +64,27 @@ public class ReservationTests
         await It.ShouldExplain(response, ReservationsController.NoCarsAvailable);
     }
 
+    [TestMethod]
+    public async Task GivenOnlyOneUnreservedCar_WhenIReserveACar()
+    {
+        HttpClient client = _factory.CreateClient();
+        await client.PostAsJsonAsync(CarTests.BaseUri, CarTests.MazdaMx5);
+        ReserveCarRequest reservationRequest = CreateValidRequest();
+
+        HttpResponseMessage response = await client.PostAsJsonAsync(BaseUri, reservationRequest);
+
+        It.ShouldAllowTheAttempt(response, HttpStatusCode.OK);
+        await ItShouldReturnReservationDetails(
+            response, ReservationResponse.Create(reservationRequest, CarTests.MazdaMx5));
+    }
+
+    private static async Task ItShouldReturnReservationDetails(
+        HttpResponseMessage response, ReservationResponse expectedResponse)
+    {
+        var actualResponse = await response.Content.ReadFromJsonAsync<ReservationResponse>();
+        Assert.AreEqual(expectedResponse, actualResponse, ReservationComparer.That);
+    }
+
     private async Task TestTimeValidation(DateTime time)
     {
         // TODO: Stub DateTime to test at the edges
@@ -100,4 +121,31 @@ public class ReservationTests
             Time = time ?? DateTime.Now.AddHours(1),
             Duration = duration ?? TimeSpan.FromHours(1) 
         };
+
+    public class ReservationComparer : EqualityComparer<ReservationResponse>
+    {
+        public readonly static ReservationComparer That = new(new CarTests.CarComparer());
+        private readonly CarTests.CarComparer _carComparer;
+
+        public ReservationComparer(CarTests.CarComparer carComparer) : base()
+        {
+            _carComparer = carComparer;
+        }
+
+        public override bool Equals(ReservationResponse? x, ReservationResponse? y)
+        {
+            if(x == null && y == null) return true;
+
+            if (x == null || y == null) return false;
+
+            return x.Time == y.Time && x.Duration == y.Duration && _carComparer.Equals(x.Car, y.Car);
+        }
+
+        public override int GetHashCode([DisallowNull] ReservationResponse obj)
+        {
+            return obj.Time.GetHashCode() 
+                ^ obj.Duration.GetHashCode() 
+                ^ _carComparer.GetHashCode(obj.Car);
+        }
+    }
 }

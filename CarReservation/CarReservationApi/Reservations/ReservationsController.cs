@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using CarReservationApi.Cars;
+using Microsoft.AspNetCore.Mvc;
 
 namespace CarReservationApi.Reservations;
 
@@ -8,6 +9,16 @@ public class ReservationsController : ControllerBase
 {
     public const string NoCarsAvailable 
         = "Booking with the given time and duration is not possible - no cars are available.";
+    private readonly ReservationRepository _reservationRepository;
+    private readonly CarRepository _carRepository;
+
+    public ReservationsController(
+        ReservationRepository reservationRepository,
+        CarRepository carRepository)
+    {
+        _reservationRepository = reservationRepository;
+        _carRepository = carRepository;
+    }
 
     [HttpPost]
     public ActionResult ReserveCar(ReserveCarRequest request)
@@ -21,6 +32,12 @@ public class ReservationsController : ControllerBase
             return ValidationProblem(e.Message);
         }
 
-        return Conflict(NoCarsAvailable);
+        if (_carRepository.Count == 0 || _reservationRepository.Count > 0)
+            return Conflict(NoCarsAvailable);
+
+        var car = _carRepository.First().Value;
+        var response = ReservationResponse.Create(request, car);
+        _reservationRepository.Add(response);
+        return Ok(response);
     }
 }

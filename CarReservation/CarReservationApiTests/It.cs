@@ -13,4 +13,11 @@ public static class It
 
     public static async Task ShouldExplain(HttpResponseMessage response, string explanation)
         => StringAssert.Contains(await response.Content.ReadAsStringAsync(), explanation);
+
+    public static void ShouldAllowTheAttempt(
+        HttpResponseMessage response, HttpStatusCode expectedCode = HttpStatusCode.OK)
+        => Assert.AreEqual(expectedCode, response.StatusCode);
+
+    public static void ShouldShowTheLocation(HttpResponseMessage response, string location)
+        => Assert.AreEqual(location, response.Headers.Location?.ToString());
 }

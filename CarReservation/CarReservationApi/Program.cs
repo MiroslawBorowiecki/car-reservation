@@ -1,11 +1,13 @@
 using CarReservationApi.Cars;
+using CarReservationApi.Reservations;
 
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
 
 builder.Services.AddControllers();
-builder.Services.AddSingleton<CarRepository>();
+builder.Services.AddSingleton<CarRepository>()
+    .AddSingleton<ReservationRepository>();
 
 var app = builder.Build();
 

@@ -78,6 +78,17 @@ public class ReservationTests
             response, ReservationResponse.Create(reservationRequest, CarTests.MazdaMx5));
     }
 
+    [TestMethod]
+    public async Task GivenNoReservationsMadeYet_WhenITryToGetThem()
+    {
+        HttpClient client = _factory.CreateClient();
+
+        HttpResponseMessage responseMessage = await client.GetAsync(BaseUri);
+
+        It.ShouldAllowTheAttempt(responseMessage);
+        await It.ShouldReturnNo<ReservationResponse>(responseMessage);
+    }
+
     private static async Task ItShouldReturnReservationDetails(
         HttpResponseMessage response, ReservationResponse expectedResponse)
     {

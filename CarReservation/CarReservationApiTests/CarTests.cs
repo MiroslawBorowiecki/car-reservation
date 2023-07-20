@@ -104,7 +104,7 @@ public class CarTests
         HttpResponseMessage response = await client.GetAsync(BaseUri);
 
         It.ShouldAllowTheAttempt(response);
-        await ItShouldReturnNoCars(response);
+        await It.ShouldReturnNo<Car>(response);
     }
 
     [TestMethod]
@@ -208,7 +208,7 @@ public class CarTests
         ItShouldNotTouchOtherCars(allCars, new[] { MazdaMx5, Peugeout206 });
     }
 
-    private void ItShouldChangeTheNumberOfCars(int expected, int actual)
+    private static void ItShouldChangeTheNumberOfCars(int expected, int actual)
         => Assert.AreEqual(expected, actual);
 
     private void ItShouldNotChangeTheNumberOfCars(int expected, int actual)
@@ -240,13 +240,6 @@ public class CarTests
             .SingleOrDefault();
         Assert.IsNotNull(existingCar);
         Assert.AreEqual(mazdaMx5, existingCar, new CarComparer());
-    }
-
-    private static async Task ItShouldReturnNoCars(HttpResponseMessage response)
-    {
-        var results = await response.Content.ReadFromJsonAsync<IEnumerable<Car>>();
-        Assert.IsNotNull(results);
-        Assert.AreEqual(0, results.Count());
     }
 
     private static async Task ItShouldReturnAllCars(HttpResponseMessage response, Car[] cars)

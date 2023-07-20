@@ -40,4 +40,7 @@ public class ReservationsController : ControllerBase
         _reservationRepository.Add(response);
         return Ok(response);
     }
+
+    [HttpGet]
+    public ActionResult<IEnumerable<ReservationResponse>> GetAll() => _reservationRepository;
 }

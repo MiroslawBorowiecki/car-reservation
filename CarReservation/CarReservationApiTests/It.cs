@@ -1,4 +1,6 @@
-﻿namespace CarReservationApi.Tests;
+﻿using CarReservationApi.Cars;
+
+namespace CarReservationApi.Tests;
 
 public static class It
 {
@@ -20,4 +22,11 @@ public static class It
 
     public static void ShouldShowTheLocation(HttpResponseMessage response, string location)
         => Assert.AreEqual(location, response.Headers.Location?.ToString());
+
+    public static async Task ShouldReturnNo<T>(HttpResponseMessage response)
+    {
+        var results = await response.Content.ReadFromJsonAsync<IEnumerable<T>>();
+        Assert.IsNotNull(results);
+        Assert.AreEqual(0, results.Count());
+    }
 }

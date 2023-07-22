@@ -11,13 +11,13 @@ public class ReservationTests
     [TestMethod]
     public async Task GivenTheDateIsNotProvided_WhenITryToReserveACar()
         => await TestMissingField(
-            new() { Duration = TimeSpan.FromHours(2) }, 
+            new() { Duration = TimeSpan.FromHours(2) },
             nameof(ReservationRequest.Time));
 
     [TestMethod]
     public async Task GivenTheDurationIsNotProvided_WhenITryToReserveACar()
         => await TestMissingField(
-            new() { Time = DateTime.Now.AddHours(1) }, 
+            new() { Time = DateTime.Now.AddHours(1) },
             nameof(ReservationRequest.Duration));
 
     [TestMethod]
@@ -40,7 +40,7 @@ public class ReservationTests
     public async Task GivenNoCarsAddedYet_WhenITryToReserveACar()
     {
         var request = CreateValidRequest(DateTime.Now.AddHours(1), TimeSpan.FromHours(1));
-        
+
         var response = await PostReservation(request);
 
         It.ShouldDenyTheAttempt(response, HttpStatusCode.Conflict);
@@ -48,16 +48,41 @@ public class ReservationTests
     }
 
     [TestMethod]
-    public async Task GivenOneCarAndAConflictingReservation_WhenITryToReserveACar()
+    public async Task GivenOneCar_WhenIRequestAReservationEndingDuringAnExistingOne()
+        => await TestConflictingRequest(
+            CreateValidRequest(DateTime.Now.AddHours(1), TimeSpan.FromHours(1.0)),
+            CreateValidRequest(DateTime.Now.AddHours(0.5), TimeSpan.FromHours(1.0)));
+
+    [TestMethod]
+    public async Task GivenOneCar_WhenIRequestAReservationStartingDuringAnExistingOne()
+        => await TestConflictingRequest(
+            CreateValidRequest(DateTime.Now.AddHours(1.0), TimeSpan.FromHours(1.0)),
+            CreateValidRequest(DateTime.Now.AddHours(1.5), TimeSpan.FromHours(1.0)));
+
+    [TestMethod]
+    public async Task GivenOneCar_WhenIRequestAReservationEncompassingAnExistingOne()
+        => await TestConflictingRequest(
+            CreateValidRequest(DateTime.Now.AddHours(1.0), TimeSpan.FromHours(1.0)),
+            CreateValidRequest(DateTime.Now.AddHours(0.5), TimeSpan.FromHours(2.0)));
+
+    [TestMethod]
+    public async Task GivenOneCar_WhenIRequestAReservationExactlyAsExistingOne()
+    {
+        var request = CreateValidRequest();
+        await TestConflictingRequest(request, request);
+    }
+
+    private async Task TestConflictingRequest(
+        ReservationRequest originalRequest, ReservationRequest conflictingRequest)
     {
         // Arrange
         HttpClient client = _factory.CreateClient();
         await client.PostAsJsonAsync(CarTests.BaseUri, CarTests.MazdaMx5);
-        ReservationRequest reservation = CreateValidRequest();
-        await client.PostAsJsonAsync(BaseUri, reservation);
+        ReservationRequest request = CreateValidRequest();
+        await client.PostAsJsonAsync(BaseUri, originalRequest);
 
         // Act
-        HttpResponseMessage response = await client.PostAsJsonAsync(BaseUri, reservation);
+        HttpResponseMessage response = await client.PostAsJsonAsync(BaseUri, conflictingRequest);
 
         // Assert
         It.ShouldDenyTheAttempt(response, HttpStatusCode.Conflict);
@@ -114,9 +139,9 @@ public class ReservationTests
     }
 
     // - More conflict types:
-    //   - request end within existing reservation
-    //   - request encompasses an existing reservation
-    //   - request start within an existing reservation
+    //   - request end within existing request
+    //   - request encompasses an existing request
+    //   - request start within an existing request
     // - Finding an unreserved car
     // - Finding the car available in the given period
     // - Get shouldn't return reservations in the past
@@ -159,12 +184,12 @@ public class ReservationTests
         => await _factory.CreateClient().PostAsJsonAsync(BaseUri, request);
 
     /// <summary>
-    /// Creates a reservation request with provided parameters.
+    /// Creates a request request with provided parameters.
     /// Defaults to one hour ahead and duration of one hour.
     /// </summary>
-    /// <param name="time">The time when the reservation should start.</param>
+    /// <param name="time">The time when the request should start.</param>
     /// <param name="duration">The intended duration.</param>
-    /// <returns>Prepared reservation request.</returns>
+    /// <returns>Prepared request request.</returns>
     private static ReservationRequest CreateValidRequest(
         DateTime? time = null, TimeSpan? duration = null) => new() 
         {

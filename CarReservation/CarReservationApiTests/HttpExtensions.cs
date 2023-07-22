@@ -4,7 +4,8 @@
     {
         internal static async Task Setup<T>(this HttpClient client, string uri, params T[] items)
         {
-            foreach (var item in items) await client.PostAsJsonAsync(uri, item);
+            foreach (var item in items)
+                (await client.PostAsJsonAsync(uri, item)).EnsureSuccessStatusCode();
         }
         
         internal static async Task ShouldReturnAll<T>(this HttpResponseMessage httpResponse,

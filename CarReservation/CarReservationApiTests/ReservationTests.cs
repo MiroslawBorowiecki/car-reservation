@@ -118,8 +118,7 @@ public class ReservationTests
     public async Task GivenACoupleReservations_WhenIGetThem()
     {
         HttpClient client = _factory.CreateClient();
-        var cars = new[] { CarTests.MazdaMx5, CarTests.MazdaMx5, CarTests.MazdaMx5 };
-        await client.Setup(CarTests.BaseUri, cars);
+        await client.PostAsJsonAsync(CarTests.BaseUri, CarTests.MazdaMx5);
         var now = DateTime.Now;
         ReservationRequest[] requests = new[]
         {
@@ -134,7 +133,7 @@ public class ReservationTests
         It.ShouldAllowTheAttempt(httpResponse);
 
         IEnumerable<ReservationResponse> expected 
-            = requests.Zip(cars).Select(z => ReservationResponse.Create(z.First, z.Second));
+            = requests.Select(req => ReservationResponse.Create(req, CarTests.MazdaMx5));
         await httpResponse.ShouldReturnAll(expected, ReservationComparer.That);
     }
 

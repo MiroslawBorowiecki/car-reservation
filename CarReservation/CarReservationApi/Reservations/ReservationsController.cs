@@ -21,11 +21,11 @@ public class ReservationsController : ControllerBase
     }
 
     [HttpPost]
-    public ActionResult ReserveCar(ReserveCarRequest request)
+    public ActionResult ReserveCar(ReservationRequest request)
     {
         try
         {
-            ReserveCarRequestValidator.Validate(request);
+            ReservationValidator.Validate(request);
         }
         catch (ArgumentException e)
         {
@@ -33,7 +33,6 @@ public class ReservationsController : ControllerBase
         }
 
         if (_carRepository.Count == 0) return Conflict(NoCarsAvailable);
-
 
         // Assuming no 'break' between reservations is needed. Consult domain experts.
         var conflicts = _reservationRepository.FindAll(
@@ -48,7 +47,7 @@ public class ReservationsController : ControllerBase
     }
 
     private static bool RequestConflictsReservation(
-        ReserveCarRequest request, ReservationResponse reservation)
+        ReservationRequest request, ReservationResponse reservation)
     {
         // Res:   ----------
         // Rq1:    ------

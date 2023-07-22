@@ -12,13 +12,13 @@ public class ReservationTests
     public async Task GivenTheDateIsNotProvided_WhenITryToReserveACar()
         => await TestMissingField(
             new() { Duration = TimeSpan.FromHours(2) }, 
-            nameof(ReserveCarRequest.Time));
+            nameof(ReservationRequest.Time));
 
     [TestMethod]
     public async Task GivenTheDurationIsNotProvided_WhenITryToReserveACar()
         => await TestMissingField(
             new() { Time = DateTime.Now.AddHours(1) }, 
-            nameof(ReserveCarRequest.Duration));
+            nameof(ReservationRequest.Duration));
 
     [TestMethod]
     public async Task GivenDurationIsLessThan5Minutes_WhenITryToReserveACar()
@@ -53,7 +53,7 @@ public class ReservationTests
         // Arrange
         HttpClient client = _factory.CreateClient();
         await client.PostAsJsonAsync(CarTests.BaseUri, CarTests.MazdaMx5);
-        ReserveCarRequest reservation = CreateValidRequest();
+        ReservationRequest reservation = CreateValidRequest();
         await client.PostAsJsonAsync(BaseUri, reservation);
 
         // Act
@@ -65,11 +65,11 @@ public class ReservationTests
     }
 
     [TestMethod]
-    public async Task GivenOnlyOneUnreservedCar_WhenIReserveACar()
+    public async Task GivenExactlyOneAndUnreservedCar_WhenIReserveACar()
     {
         HttpClient client = _factory.CreateClient();
         await client.Setup(CarTests.BaseUri, CarTests.MazdaMx5);
-        ReserveCarRequest reservationRequest = CreateValidRequest();
+        ReservationRequest reservationRequest = CreateValidRequest();
 
         HttpResponseMessage response = await client.PostAsJsonAsync(BaseUri, reservationRequest);
 
@@ -96,7 +96,7 @@ public class ReservationTests
         var cars = new[] { CarTests.MazdaMx5, CarTests.MazdaMx5, CarTests.MazdaMx5 };
         await client.Setup(CarTests.BaseUri, cars);
         var now = DateTime.Now;
-        ReserveCarRequest[] requests = new[]
+        ReservationRequest[] requests = new[]
         {
             CreateValidRequest(now.AddHours(1)),
             CreateValidRequest(now.AddHours(3)),
@@ -113,6 +113,14 @@ public class ReservationTests
         await httpResponse.ShouldReturnAll(expected, ReservationComparer.That);
     }
 
+    // - More conflict types:
+    //   - request end within existing reservation
+    //   - request encompasses an existing reservation
+    //   - request start within an existing reservation
+    // - Finding an unreserved car
+    // - Finding the car available in the given period
+    // - Get shouldn't return reservations in the past
+
     private static async Task ItShouldReturnReservationDetails(
         HttpResponseMessage response, ReservationResponse expectedResponse)
     {
@@ -127,7 +135,7 @@ public class ReservationTests
         HttpResponseMessage response = await PostReservation(request);
 
         It.ShouldDenyTheAttempt(response);
-        await It.ShouldExplain(response, ReserveCarRequestValidator.TimeValidationError);
+        await It.ShouldExplain(response, ReservationValidator.TimeValidationError);
     }
 
     private async Task TestDurationValidation(TimeSpan duration)
@@ -136,10 +144,10 @@ public class ReservationTests
         HttpResponseMessage response = await PostReservation(request);
 
         It.ShouldDenyTheAttempt(response);
-        await It.ShouldExplain(response, ReserveCarRequestValidator.DurationValidationError);
+        await It.ShouldExplain(response, ReservationValidator.DurationValidationError);
     }
 
-    private async Task TestMissingField(ReserveCarRequest request, string fieldName)
+    private async Task TestMissingField(ReservationRequest request, string fieldName)
     {
         HttpResponseMessage response = await PostReservation(request);
 
@@ -147,10 +155,17 @@ public class ReservationTests
         await It.ShouldRequireAField(response, fieldName);
     }
 
-    private async Task<HttpResponseMessage> PostReservation(ReserveCarRequest request) 
+    private async Task<HttpResponseMessage> PostReservation(ReservationRequest request) 
         => await _factory.CreateClient().PostAsJsonAsync(BaseUri, request);
 
-    private static ReserveCarRequest CreateValidRequest(
+    /// <summary>
+    /// Creates a reservation request with provided parameters.
+    /// Defaults to one hour ahead and duration of one hour.
+    /// </summary>
+    /// <param name="time">The time when the reservation should start.</param>
+    /// <param name="duration">The intended duration.</param>
+    /// <returns>Prepared reservation request.</returns>
+    private static ReservationRequest CreateValidRequest(
         DateTime? time = null, TimeSpan? duration = null) => new() 
         {
             Time = time ?? DateTime.Now.AddHours(1),

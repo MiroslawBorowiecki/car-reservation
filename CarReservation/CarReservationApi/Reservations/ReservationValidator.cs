@@ -1,6 +1,6 @@
 ﻿namespace CarReservationApi.Reservations;
 
-public class ReserveCarRequestValidator
+public static class ReservationValidator
 {
     public const string DurationValidationError
         = "Duration must be between 5 minutes and 2 hours.";
@@ -18,7 +18,7 @@ public class ReserveCarRequestValidator
     private static readonly int minMinutesAhead = 5;
     private static readonly int maxHoursAhead = 24;
 
-    public static void Validate(ReserveCarRequest request)
+    public static void Validate(ReservationRequest request)
     {
         ValidateDuration(request.Duration);
         ValidateTime(request.Time);        

@@ -1,4 +1,5 @@
-﻿using CarReservationApi.Reservations;
+﻿using CarReservationApi.Cars;
+using CarReservationApi.Reservations;
 
 namespace CarReservationApi.Tests;
 
@@ -78,7 +79,6 @@ public class ReservationTests
         // Arrange
         HttpClient client = _factory.CreateClient();
         await client.PostAsJsonAsync(CarTests.BaseUri, CarTests.MazdaMx5);
-        ReservationRequest request = CreateValidRequest();
         await client.PostAsJsonAsync(BaseUri, originalRequest);
 
         // Act
@@ -137,13 +137,68 @@ public class ReservationTests
         await httpResponse.ShouldReturnAll(expected, ReservationComparer.That);
     }
 
-    // - More conflict types:
-    //   - request end within existing request
-    //   - request encompasses an existing request
-    //   - request start within an existing request
+    [TestMethod]
+    public async Task GivenACoupleOfCars_WhenIMakeSubsequentOverlappingReservations()
+    {
+        // Arrange
+        HttpClient client = _factory.CreateClient();
+        await client.Setup(CarTests.BaseUri, 
+            CarTests.MazdaMx5, CarTests.OpelAstra, CarTests.Peugeout206, CarTests.DodgeViper);
+        var now = DateTime.Now;
+        List<ReservationResponse> responses = new();
+
+        // Act
+        ReservationRequest request = CreateValidRequest(now.AddHours(1), new TimeSpan(1, 0, 0));
+        HttpResponseMessage response = await SubmitReservation(client, request);
+        // Assert
+        responses.Add(await ItReservesFirstAvailableCar(response, request, CarTests.MazdaMx5));
+
+        // Act: reservation ending during an existing one - car available
+        var requestEndWithin = CreateValidRequest(now.AddHours(0.5), new TimeSpan(1, 30, 0));
+        response = await SubmitReservation(client, requestEndWithin);
+        // Assert
+        responses.Add(await ItReservesFirstAvailableCar(response, requestEndWithin, CarTests.OpelAstra));
+
+        // Act: reservation starting during an existing one - car available
+        var requestStartWithin = CreateValidRequest(now.AddHours(1.5), new TimeSpan(1, 0, 0));
+        response = await SubmitReservation(client, requestStartWithin);
+        // Assert
+        responses.Add(await ItReservesFirstAvailableCar(
+            response, requestStartWithin, CarTests.Peugeout206));
+
+        // Act: reservation encompassing an existing one - car available
+        var requestEncompassing = CreateValidRequest(now.AddHours(0.5), new TimeSpan(2, 0, 0));
+        response = await SubmitReservation(client, requestEncompassing);
+        // Assert
+        responses.Add(await ItReservesFirstAvailableCar(
+            response, requestEncompassing, CarTests.DodgeViper));
+
+        // 1. Positive - all conflict possibilities - at least one unreserved car.
+        // 2. Positive - all conflict possibilities - all cars reserved, at least one free at the time.
+        // 3. Negative - all conflict possibilities - all cars reserved at the time        
+        // 4. GET -> All positive reservations should be returned.
+    }
+
+    private static async Task<HttpResponseMessage> SubmitReservation
+        (HttpClient client, ReservationRequest request)
+    {
+        return await client.PostAsJsonAsync(BaseUri, request);
+    }
+
     // - Finding an unreserved car
     // - Finding the car available in the given period
     // - Get shouldn't return reservations in the past
+    // - Shouldn't be possible to remove or update a car upcoming reservations.
+
+    private static async Task<ReservationResponse> ItReservesFirstAvailableCar(
+        HttpResponseMessage response, ReservationRequest request, Car car)
+    {
+        response.EnsureSuccessStatusCode();
+        var expectedResponse = ReservationResponse.Create(request, car);
+        var actualResponse = await response.Content.ReadFromJsonAsync<ReservationResponse>();
+        Assert.AreEqual(expectedResponse, actualResponse, ReservationComparer.That);
+        return actualResponse!;
+    }
 
     private static async Task ItShouldReturnReservationDetails(
         HttpResponseMessage response, ReservationResponse expectedResponse)
@@ -198,10 +253,10 @@ public class ReservationTests
 
     public class ReservationComparer : EqualityComparer<ReservationResponse>
     {
-        public readonly static ReservationComparer That = new(new CarTests.CarComparer());
-        private readonly CarTests.CarComparer _carComparer;
+        public readonly static ReservationComparer That = new(CarComparer.That);
+        private readonly CarComparer _carComparer;
 
-        public ReservationComparer(CarTests.CarComparer carComparer) : base()
+        public ReservationComparer(CarComparer carComparer) : base()
         {
             _carComparer = carComparer;
         }

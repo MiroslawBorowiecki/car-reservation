@@ -9,6 +9,7 @@ public class CarTests
     public static readonly Car MazdaMx5 = CreateTestCar("Mazda", "MX-5", "C1");
     public static readonly Car OpelAstra = CreateTestCar("Opel", "Astra", "C2");
     public static readonly Car Peugeout206 = CreateTestCar("Peugeout", "206", "C3");
+    public static readonly Car DodgeViper = CreateTestCar("Dodge", "Viper", "C4");
     private readonly WebApplicationFactory<Program> _factory = new();
 
     [TestMethod]
@@ -273,22 +274,5 @@ public class CarTests
         if (id != null) car.Id = id;
 
         return car;
-    }
-
-    public class CarComparer : EqualityComparer<Car>
-    {
-        public override bool Equals(Car? x, Car? y)
-        {
-            if (x == null && y == null) return true;
-
-            if (x == null || y == null) return false;            
-
-            return x.Id == y.Id && x.Make == y.Make && x.Model == y.Model;
-        }
-
-        public override int GetHashCode([DisallowNull] Car obj)
-        {
-            return (obj.Id + obj.Make + obj.Model).GetHashCode();
-        }
     }
 }

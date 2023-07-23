@@ -7,7 +7,7 @@ namespace CarReservationApi.Reservations;
 [Route("[controller]")]
 public class ReservationsController : ControllerBase
 {
-    public const string NoCarsAvailable 
+    public const string NoCarsAvailable
         = "Booking with the given time and duration is not possible - no cars are available.";
     private readonly ReservationRepository _reservationRepository;
     private readonly CarRepository _carRepository;
@@ -34,36 +34,34 @@ public class ReservationsController : ControllerBase
 
         if (_carRepository.Count == 0) return Conflict(NoCarsAvailable);
 
-        // Assuming no 'break' between reservations is needed. Consult domain experts.
-        var conflicts = _reservationRepository.FindAll(
-            r => RequestConflictsReservation(request, r));
+        var availableCar = FindAvailableCar(request);
 
-        if (conflicts.Count > 0) return Conflict(NoCarsAvailable);
+        if (availableCar == null) return Conflict(NoCarsAvailable);
 
-        var car = _carRepository.First().Value;
-        var response = ReservationResponse.Create(request, car);
+        var response = ReservationResponse.Create(request, availableCar);
         _reservationRepository.Add(response);
         return Ok(response);
     }
 
-    private static bool RequestConflictsReservation(
-        ReservationRequest request, ReservationResponse reservation)
+    private Car? FindAvailableCar(ReservationRequest request)
     {
-        // Res:   ----------
-        // Rq1:    ------
-        // Rq2:  ---
-        // Rq3:  -------------
-        // Rq4:         -------
-
-        // Rq1 = Rq2 -> RqEnd > ResStart && RqEnd < ResEnd
-        // Rq3 -> RqStart < ResStart && RqEnd > ResEnd
-        // Rq4 -> RqStart < ResEnd && RqEnd > ResEnd
         DateTime? requestEnd = request.Time + request.Duration;
-        DateTime? reservationEnd = reservation.Time + reservation.Duration;
 
-        return (requestEnd > reservation.Time && requestEnd <= reservationEnd)
-            || (request.Time <= reservation.Time && requestEnd >= reservationEnd)
-            || (request.Time < reservationEnd && requestEnd > reservationEnd);
+        // Assuming no 'break' between reservations is needed. Consult domain experts.
+        var conflictingCarReservations =
+            from reservation in _reservationRepository
+            let reservationEnd = reservation.Time + reservation.Duration
+            // Requested reservation would end during an existing one.
+            where (reservation.Time < requestEnd && reservationEnd >= requestEnd)
+            // Requested reservation would encompass an existing one.
+            || (reservation.Time >= request.Time && reservationEnd <= requestEnd)
+            // Requested reservation would start during an existing one.
+            || (reservation.Time <= request.Time && reservationEnd > request.Time)
+            select reservation.Car;
+
+        return _carRepository.Values
+            .Except(conflictingCarReservations, CarComparer.That)
+            .FirstOrDefault();
     }
 
     [HttpGet]

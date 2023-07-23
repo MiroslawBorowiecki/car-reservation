@@ -1,7 +1,6 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
 using CarReservationApi.Cars;
 using CarReservationApi.Http;
-using CarReservationApi.Reservations;
 
 namespace CarReservationApi.Tests;
 
@@ -47,7 +46,7 @@ public class ReservationTests
         var response = await PostReservation(request);
 
         It.ShouldDenyTheAttempt(response, HttpStatusCode.Conflict);
-        await It.ShouldExplain(response, ReservationsController.NoCarsAvailable);
+        await It.ShouldExplain(response, Messages.NoCarsAvailable);
     }
 
     [TestMethod]
@@ -88,7 +87,7 @@ public class ReservationTests
 
         // Assert
         It.ShouldDenyTheAttempt(response, HttpStatusCode.Conflict);
-        await It.ShouldExplain(response, ReservationsController.NoCarsAvailable);
+        await It.ShouldExplain(response, Messages.NoCarsAvailable);
     }
 
     [TestMethod]
@@ -197,21 +196,21 @@ public class ReservationTests
         response = await SubmitReservation(client, request);
         // Assert
         It.ShouldDenyTheAttempt(response, HttpStatusCode.Conflict);
-        await It.ShouldExplain(response, ReservationsController.NoCarsAvailable);
+        await It.ShouldExplain(response, Messages.NoCarsAvailable);
 
         // Act: reservation starting during an existing one - no cars available at the time
         request = CreateValidRequest(now.AddHours(1.5), new TimeSpan(1, 0, 0));
         response = await SubmitReservation(client, request);
         // Assert
         It.ShouldDenyTheAttempt(response, HttpStatusCode.Conflict);
-        await It.ShouldExplain(response, ReservationsController.NoCarsAvailable);
+        await It.ShouldExplain(response, Messages.NoCarsAvailable);
 
         // Act: reservation encompassing an existing one - no cars available at the time
         request = CreateValidRequest(now.AddHours(0.5), new TimeSpan(2, 0, 0));
         response = await SubmitReservation(client, request);
         // Assert
         It.ShouldDenyTheAttempt(response, HttpStatusCode.Conflict);
-        await It.ShouldExplain(response, ReservationsController.NoCarsAvailable);
+        await It.ShouldExplain(response, Messages.NoCarsAvailable);
 
         // Act
         HttpResponseMessage httpResponse = await client.GetAsync(BaseUri);
@@ -297,7 +296,7 @@ public class ReservationTests
         HttpResponseMessage response = await PostReservation(request);
 
         It.ShouldDenyTheAttempt(response);
-        await It.ShouldExplain(response, ReservationValidator.TimeValidationError);
+        await It.ShouldExplain(response, Messages.TimeValidationError);
     }
 
     private async Task TestDurationValidation(TimeSpan duration)
@@ -306,7 +305,7 @@ public class ReservationTests
         HttpResponseMessage response = await PostReservation(request);
 
         It.ShouldDenyTheAttempt(response);
-        await It.ShouldExplain(response, ReservationValidator.DurationValidationError);
+        await It.ShouldExplain(response, Messages.DurationValidationError);
     }
 
     private async Task TestMissingField(ReservationRequest request, string fieldName)

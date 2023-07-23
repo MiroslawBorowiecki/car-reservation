@@ -143,6 +143,7 @@ public class CarTests
             = await client.PutAsJsonAsync($"{BaseUri}/{MazdaMx5.Id}", updateCarRequest);
 
         It.ShouldDenyTheAttempt(response, HttpStatusCode.Conflict);
+        await It.ShouldExplain(response, Messages.CarReservedError);
     }
 
     [TestMethod]

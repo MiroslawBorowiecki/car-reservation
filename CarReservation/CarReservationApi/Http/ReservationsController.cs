@@ -7,8 +7,7 @@ namespace CarReservationApi.Http;
 [Route("[controller]")]
 public class ReservationsController : ControllerBase
 {
-    public const string NoCarsAvailable
-        = "Booking with the given time and duration is not possible - no cars are available.";
+    
     private readonly ReservationService _reservationService;
 
     public ReservationsController(ReservationService reservationService)
@@ -24,7 +23,7 @@ public class ReservationsController : ControllerBase
             var result = _reservationService.ReserveCar(request);
             return result != null
                 ? Ok(result)
-                : Conflict(NoCarsAvailable);
+                : Conflict(Messages.NoCarsAvailable);
         }
         catch (ArgumentException e)
         {

@@ -30,13 +30,17 @@ public class CarsController : ControllerBase
     [HttpPut]
     [Route("{id}")]
     public ActionResult Update([FromRoute] string id, CarUpdateRequest updateCarRequest)
-        => _carService.Update(id, updateCarRequest.Make, updateCarRequest.Model).Status switch
+    {
+        Result result = _carService.Update(id, updateCarRequest.Make, updateCarRequest.Model);
+        return result.Status switch
         {
             Status.Success => NoContent(),
             Status.NotFound => NotFound(),
-            Status.Conflict => Conflict(),
+            Status.Conflict => Conflict(result.Message),
             _ => throw new InvalidOperationException()
         };
+    }
+        
 
     [HttpDelete]
     [Route("{id}")]

@@ -2,13 +2,8 @@
 
 namespace CarReservationApi.Reservations;
 
-public static class ReservationValidator
+internal static class ReservationValidator
 {
-    public const string DurationValidationError
-        = "Duration must be between 5 minutes and 2 hours.";
-    public const string TimeValidationError
-        = "The reservation can be taken from 5 minutes up to 24 hours ahead.";
-
     // The specification does not say - it is my assumption that reservation for less than 5
     // minutes doesn't make sense.
     private static readonly TimeSpan minimumDuration = TimeSpan.FromMinutes(5);
@@ -29,7 +24,7 @@ public static class ReservationValidator
     private static void ValidateDuration(TimeSpan? duration)
     {
         if (duration < minimumDuration || duration > maximumDuration)
-            throw new ArgumentOutOfRangeException(DurationValidationError);
+            throw new ArgumentOutOfRangeException(Messages.DurationValidationError);
     }
 
     private static void ValidateTime(DateTime? time, DateTime now)
@@ -37,6 +32,6 @@ public static class ReservationValidator
         var minTime = now.AddMinutes(minMinutesAhead);
         var maxTime = now.AddHours(maxHoursAhead);
         if (time < minTime || time > maxTime)
-            throw new ArgumentOutOfRangeException(TimeValidationError);
+            throw new ArgumentOutOfRangeException(Messages.TimeValidationError);
     }
 }

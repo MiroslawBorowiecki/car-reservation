@@ -1,4 +1,5 @@
 ﻿using CarReservationApi.Cars.Persistence;
+using CarReservationApi.Http;
 using CarReservationApi.Reservations;
 
 namespace CarReservationApi.Cars;
@@ -31,7 +32,7 @@ public class CarService
             return new(Status.NotFound);
 
         if (_reservationService.CarHasUpcomingOrOngoingReservation(id))
-            return new(Status.Conflict);
+            return new(Status.Conflict, Messages.CarReservedError);
 
         car.Make = make;
         car.Model = model;

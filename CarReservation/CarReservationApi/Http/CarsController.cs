@@ -14,7 +14,18 @@ public class CarsController : ControllerBase
         _carService = carService;
     }
 
+    /// <summary>
+    /// Creates a car.
+    /// </summary>
+    /// <param name="car">Data of the car.</param>
+    /// <returns>The created car.</returns>
+    /// <response code="201">The newly created car.</response>
+    /// <response code="400">Invalid/missing data: Id, Make, or Model.</response>
+    /// <response code="409">Car with specified ID exists.</response>
     [HttpPost]
+    [ProducesResponseType(StatusCodes.Status201Created)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status409Conflict)]
     public ActionResult<Car> Add(Car car) => _carService.Add(car)
             ? Created($"/cars/{car.Id}", car)
             : Conflict();

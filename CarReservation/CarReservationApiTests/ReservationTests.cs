@@ -265,7 +265,7 @@ public class ReservationTests
         return (await response.Content.ReadFromJsonAsync<ReservationResponse>())!;
     }
 
-    private static async Task<HttpResponseMessage> SubmitReservation
+    public static async Task<HttpResponseMessage> SubmitReservation
         (HttpClient client, ReservationRequest request)
     {
         return await client.PostAsJsonAsync(BaseUri, request);
@@ -327,7 +327,7 @@ public class ReservationTests
     /// <param name="time">The time when the request should start.</param>
     /// <param name="duration">The intended duration.</param>
     /// <returns>Prepared request request.</returns>
-    private static ReservationRequest CreateValidRequest(
+    public static ReservationRequest CreateValidRequest(
         DateTime? time = null, TimeSpan? duration = null) => new()
         {
             Time = time ?? DateTime.Now.AddHours(1),

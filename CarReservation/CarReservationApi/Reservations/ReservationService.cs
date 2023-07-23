@@ -39,6 +39,9 @@ public class ReservationService
     public List<ReservationResponse> GetAll() 
         => _reservationRepository.Where(r => r.Time > _dateTimeProvider.Now).ToList();
 
+    internal bool CarHasUpcomingOrOngoingReservation(string carId) => _reservationRepository
+        .Any(r => r.Time + r.Duration > _dateTimeProvider.Now && r.Car.Id == carId);
+
     private Car? FindAvailableCar(ReservationRequest request)
     {
         DateTime? requestEnd = request.Time + request.Duration;

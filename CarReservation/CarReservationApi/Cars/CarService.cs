@@ -1,14 +1,17 @@
 ﻿using CarReservationApi.Cars.Persistence;
+using CarReservationApi.Reservations;
 
 namespace CarReservationApi.Cars;
 
 public class CarService
 {
     private readonly CarRepository _cars;
+    private readonly ReservationService _reservationService;
 
-    public CarService(CarRepository _cars)
+    public CarService(CarRepository cars, ReservationService reservationService)
     {
-        this._cars = _cars;
+        _cars = cars;
+        _reservationService = reservationService;
     }
 
     public bool Add(Car car)
@@ -22,14 +25,17 @@ public class CarService
 
     public List<Car> GetAll() => _cars.Values.ToList();
 
-    public bool Update(string id, string make, string model)
+    public Result Update(string id, string make, string model)
     {
         if (!_cars.TryGetValue(id, out Car? car))
-            return false;
+            return new(Status.NotFound);
+
+        if (_reservationService.CarHasUpcomingOrOngoingReservation(id))
+            return new(Status.Conflict);
 
         car.Make = make;
         car.Model = model;
-        return true;
+        return new(Status.Success);
     }
 
     public bool Remove(string id) => _cars.Remove(id);

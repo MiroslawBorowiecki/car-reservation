@@ -132,6 +132,20 @@ public class CarTests
     }
 
     [TestMethod]
+    public async Task GivenACarWithUpcomingReservation_WhenITryToUpdateIt()
+    {
+        HttpClient client = _factory.CreateClient();
+        await client.PostAsJsonAsync(BaseUri, MazdaMx5);
+        await ReservationTests.SubmitReservation(client, ReservationTests.CreateValidRequest());
+
+        CarUpdateRequest updateCarRequest = new() { Make = "Jaguar", Model = "F-Type" };
+        HttpResponseMessage response
+            = await client.PutAsJsonAsync($"{BaseUri}/{MazdaMx5.Id}", updateCarRequest);
+
+        It.ShouldDenyTheAttempt(response, HttpStatusCode.Conflict);
+    }
+
+    [TestMethod]
     public async Task GivenSomeCars_WhenITryToUpdateUsingUnknownId()
     {
         HttpClient client = _factory.CreateClient();

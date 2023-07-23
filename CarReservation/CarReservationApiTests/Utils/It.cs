@@ -1,7 +1,4 @@
-﻿using CarReservationApi.Cars;
-using static CarReservationApi.Tests.CarTests;
-
-namespace CarReservationApi.Tests;
+﻿namespace CarReservationApiTests.Utils;
 
 public static class It
 {
@@ -33,7 +30,7 @@ public static class It
 
     public static void ShouldReturnAll<T>(
         IEnumerable<T> expected, IEnumerable<T> actual, IEqualityComparer<T> comparer)
-    {        
+    {
         HashSet<T> expectedSet = new(expected, comparer);
         Assert.IsTrue(expectedSet.SetEquals(actual), $"Not all {typeof(T).Name}s were returned.");
     }

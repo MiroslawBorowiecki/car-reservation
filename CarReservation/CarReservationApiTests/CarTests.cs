@@ -1,6 +1,7 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
 using CarReservationApi.Cars;
 using CarReservationApi.Http;
+using CarReservationApiTests.Utils;
 
 namespace CarReservationApi.Tests;
 
@@ -246,6 +247,40 @@ public class CarTests
         HashSet<Car> allCars = await GetComparableCars(client);
         ItShouldChangeTheNumberOfCars(2, allCars.Count);
         ItShouldNotTouchOtherCars(allCars, new[] { MazdaMx5, Peugeout206 });
+    }
+
+    [TestMethod]
+    public async Task GivenACarWithUpcomingOrOngoingReservation_WhenITryToRemoveIt()
+    {
+        // Arrange
+        TestDateTimeProvider timeProvider = new();
+        HttpClient client = _factory
+            .WithWebHostBuilder(b => b.ConfigureServices(
+                s => s.AddSingleton<IDateTimeProvider>(timeProvider)))
+            .CreateClient();
+        await client.PostAsJsonAsync(BaseUri, MazdaMx5);
+        await ReservationTests.SubmitReservation(
+            client, ReservationTests.CreateValidRequest(timeProvider.Now.AddHours(1)));
+
+
+        // Act - the 'upcoming' reservation
+        HttpResponseMessage response = await client.DeleteAsync($"{BaseUri}/{MazdaMx5.Id}");
+        // Assert
+        It.ShouldDenyTheAttempt(response, HttpStatusCode.Conflict);
+        await It.ShouldExplain(response, Messages.CarReservedError);
+
+        // Act - the 'ongoing' reservation
+        timeProvider.Now = timeProvider.Now.AddHours(1.25);
+        response = await client.DeleteAsync($"{BaseUri}/{MazdaMx5.Id}");
+        // Assert
+        It.ShouldDenyTheAttempt(response, HttpStatusCode.Conflict);
+        await It.ShouldExplain(response, Messages.CarReservedError);
+
+        // Act - no upcoming or ongoing reservations
+        timeProvider.Now = timeProvider.Now.AddHours(1.25);
+        response = await client.DeleteAsync($"{BaseUri}/{MazdaMx5.Id}");
+        // Assert
+        It.ShouldAllowTheAttempt(response, HttpStatusCode.NoContent);
     }
 
     private static void ItShouldChangeTheNumberOfCars(int expected, int actual)

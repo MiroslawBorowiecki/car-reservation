@@ -1,4 +1,6 @@
-﻿namespace CarReservationApi.Tests;
+﻿using CarReservationApi;
+
+namespace CarReservationApiTests.Utils;
 
 public class TestDateTimeProvider : IDateTimeProvider
 {

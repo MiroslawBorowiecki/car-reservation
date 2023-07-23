@@ -39,5 +39,14 @@ public class CarService
         return new(Status.Success);
     }
 
-    public bool Remove(string id) => _cars.Remove(id);
+    public Result Remove(string id)
+    {
+        if (!_cars.ContainsKey(id)) return new(Status.NotFound);
+
+        if (_reservationService.CarHasUpcomingOrOngoingReservation(id))
+            return new(Status.Conflict, Messages.CarReservedError);
+
+        _cars.Remove(id);
+        return new(Status.Success);
+    }
 }

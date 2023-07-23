@@ -1,6 +1,7 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
 using CarReservationApi.Cars;
 using CarReservationApi.Http;
+using CarReservationApiTests.Utils;
 
 namespace CarReservationApi.Tests;
 

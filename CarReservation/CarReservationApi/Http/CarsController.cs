@@ -1,8 +1,7 @@
 ﻿using CarReservationApi.Cars;
+using Microsoft.AspNetCore.Mvc;
 
 namespace CarReservationApi.Http;
-
-using Microsoft.AspNetCore.Mvc;
 
 [ApiController]
 [Route("[controller]")]
@@ -39,12 +38,19 @@ public class CarsController : ControllerBase
             Status.Conflict => Conflict(result.Message),
             _ => throw new InvalidOperationException()
         };
-    }
-        
+    }        
 
     [HttpDelete]
     [Route("{id}")]
-    public ActionResult Remove([FromRoute] string id) => _carService.Remove(id)
-        ? NoContent()
-        : NotFound();
+    public ActionResult Remove([FromRoute] string id)
+    {
+        Result result = _carService.Remove(id);
+        return result.Status switch
+        {
+            Status.Success => NoContent(),
+            Status.NotFound => NotFound(),
+            Status.Conflict => Conflict(result.Message),
+            _ => throw new InvalidOperationException()
+        };
+    } 
 }

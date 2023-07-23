@@ -1,3 +1,4 @@
+using System.Reflection;
 using CarReservationApi;
 using CarReservationApi.Cars;
 using CarReservationApi.Cars.Persistence;
@@ -16,7 +17,11 @@ builder.Services
 
 builder.Services.AddControllers();
 
-builder.Services.AddSwaggerGen();
+builder.Services.AddSwaggerGen(options =>
+{
+    var xmlFilename = $"{Assembly.GetExecutingAssembly().GetName().Name}.xml";
+    options.IncludeXmlComments(Path.Combine(AppContext.BaseDirectory, xmlFilename));
+});
 
 var app = builder.Build();
 

@@ -1,9 +1,10 @@
-﻿using CarReservationApi.Cars;
-using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Mvc;
+using CarReservationApi.Cars;
 
 namespace CarReservationApi.Http;
 
 [ApiController]
+[Produces("application/json")]
 [Route("[controller]")]
 public class CarsController : ControllerBase
 {
@@ -30,15 +31,33 @@ public class CarsController : ControllerBase
             ? Created($"/cars/{car.Id}", car)
             : Conflict();
 
+    /// <summary>
+    /// Retrieves all existing cars.
+    /// </summary>
+    /// <returns>All existing cars.</returns>
+    /// <response code="200">All existing cars.</response>
     [HttpGet]
+    [ProducesResponseType(StatusCodes.Status200OK)]
     public ActionResult<IEnumerable<Car>> GetAll() => _carService.GetAll();
 
     // I didn't provide any GET /{id} method, as the specification did not list as required.
 
-    // I have assumed that Update doesn't include car's ID for simplicity.
-    // The same can still be achieved by adding new car first and then removing the previous one.
+    /// <summary>
+    /// Updates specified car's data.
+    /// </summary>
+    /// <param name="id">Id of the updated car.</param>
+    /// <param name="updateCarRequest">New data of the car.</param>
+    /// <returns></returns>
+    /// <response code="204">Car successfully updated.</response>
+    /// <response code="400">Invalid/missing data: Make, or Model.</response>
+    /// <response code="404">Car not found.</response>
+    /// <response code="409">Car has an onging or upcoming reservation.</response>
     [HttpPut]
     [Route("{id}")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [ProducesResponseType(StatusCodes.Status409Conflict)]
     public ActionResult Update([FromRoute] string id, CarUpdateRequest updateCarRequest)
     {
         Result result = _carService.Update(id, updateCarRequest.Make, updateCarRequest.Model);
@@ -49,10 +68,21 @@ public class CarsController : ControllerBase
             Status.Conflict => Conflict(result.Message),
             _ => throw new InvalidOperationException()
         };
-    }        
+    }
 
+    /// <summary>
+    /// Removes the specified car.
+    /// </summary>
+    /// <param name="id">Id of the car.</param>
+    /// <returns></returns>
+    /// <response code="204">Car successfully removed.</response>
+    /// <response code="404">Car not found.</response>
+    /// <response code="409">Car has an onging or upcoming reservation.</response>
     [HttpDelete]
     [Route("{id}")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [ProducesResponseType(StatusCodes.Status409Conflict)]
     public ActionResult Remove([FromRoute] string id)
     {
         Result result = _carService.Remove(id);

@@ -2,7 +2,7 @@
 
 namespace CarReservationApi.Reservations;
 
-internal static class ReservationValidator
+public static class ReservationValidator
 {
     public const string DurationValidationError
         = "Duration must be between 5 minutes and 2 hours.";

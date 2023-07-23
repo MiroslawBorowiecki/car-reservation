@@ -1,4 +1,5 @@
-﻿using CarReservationApi.Cars;
+﻿using Microsoft.Extensions.DependencyInjection;
+using CarReservationApi.Cars;
 using CarReservationApi.Http;
 using CarReservationApi.Reservations;
 
@@ -8,7 +9,7 @@ namespace CarReservationApi.Tests;
 public class ReservationTests
 {
     private const string BaseUri = "/reservations";
-    private readonly WebApplicationFactory<Program> _factory = new();
+    private readonly WebApplicationFactory<Program> _factory = new();    
 
     [TestMethod]
     public async Task GivenTheDateIsNotProvided_WhenITryToReserveACar()
@@ -133,17 +134,18 @@ public class ReservationTests
 
         It.ShouldAllowTheAttempt(httpResponse);
 
-        IEnumerable<ReservationResponse> expected 
+        IEnumerable<ReservationResponse> expected
             = requests.Select(req => ReservationResponse.Create(req, CarTests.MazdaMx5));
         await httpResponse.ShouldReturnAll(expected, ReservationComparer.That);
     }
 
+    // TODO: Refactor this into individual, more readable test cases.
     [TestMethod]
     public async Task GivenACoupleOfCars_WhenIMakeSubsequentOverlappingReservations()
     {
         // Arrange
         HttpClient client = _factory.CreateClient();
-        await client.Setup(CarTests.BaseUri, 
+        await client.Setup(CarTests.BaseUri,
             CarTests.MazdaMx5, CarTests.OpelAstra, CarTests.Peugeout206, CarTests.DodgeViper);
         var now = DateTime.Now;
         List<ReservationResponse> responses = new();
@@ -214,8 +216,53 @@ public class ReservationTests
         // Act
         HttpResponseMessage httpResponse = await client.GetAsync(BaseUri);
         // Assert
-        It.ShouldAllowTheAttempt(httpResponse);        
+        It.ShouldAllowTheAttempt(httpResponse);
         await httpResponse.ShouldReturnAll(responses, ReservationComparer.That);
+    }
+
+    [TestMethod]
+    public async Task GivenSomePastReservations_WhenIGetAll()
+    {
+        // Arrange
+        TestDateTimeProvider timeProvider = new();
+        HttpClient client = _factory.WithWebHostBuilder(builder => builder.ConfigureServices(
+            services => services.AddSingleton<IDateTimeProvider>(timeProvider)))
+            .CreateClient();
+        await client.Setup(CarTests.BaseUri, CarTests.MazdaMx5);
+
+        var pastReservations = await SendACoupleValidRequests(client, timeProvider!.Now);
+        
+        timeProvider.Now = timeProvider.Now.AddDays(2.0);
+        var expectedReservations = await SendACoupleValidRequests(client, timeProvider.Now);
+        // This moves the time so that the first of new reservations is already started.
+        timeProvider.Now = timeProvider.Now = expectedReservations[0].Time!.Value.AddMinutes(1.0);
+        expectedReservations.RemoveAt(0);
+
+        // Act
+        var actualReservations 
+            = await client.GetFromJsonAsync<IEnumerable<ReservationResponse>>(BaseUri);
+
+        // Assert
+        It.ShouldReturnAll(expectedReservations, actualReservations!, ReservationComparer.That);
+    }
+
+    private async Task<List<ReservationResponse>> SendACoupleValidRequests(
+        HttpClient client, DateTime now)
+    {
+        List<ReservationResponse> responses = new()
+        {
+            await ReserveCar(client, CreateValidRequest(now.AddHours(1.0))),
+            await ReserveCar(client, CreateValidRequest(now.AddHours(3.0))),
+            await ReserveCar(client, CreateValidRequest(now.AddHours(5.0)))
+        };
+        return responses;
+    }
+
+    private static async Task<ReservationResponse> ReserveCar(
+        HttpClient client, ReservationRequest request)
+    {
+        var response = await client.PostAsJsonAsync(BaseUri, request);
+        return (await response.Content.ReadFromJsonAsync<ReservationResponse>())!;
     }
 
     private static async Task<HttpResponseMessage> SubmitReservation
@@ -224,7 +271,6 @@ public class ReservationTests
         return await client.PostAsJsonAsync(BaseUri, request);
     }
 
-    // - Get shouldn't return reservations in the past
     // - Shouldn't be possible to remove or update a car upcoming reservations.
 
     private static async Task<ReservationResponse> ItReservesFirstAvailableCar(
@@ -271,7 +317,7 @@ public class ReservationTests
         await It.ShouldRequireAField(response, fieldName);
     }
 
-    private async Task<HttpResponseMessage> PostReservation(ReservationRequest request) 
+    private async Task<HttpResponseMessage> PostReservation(ReservationRequest request)
         => await _factory.CreateClient().PostAsJsonAsync(BaseUri, request);
 
     /// <summary>
@@ -282,10 +328,10 @@ public class ReservationTests
     /// <param name="duration">The intended duration.</param>
     /// <returns>Prepared request request.</returns>
     private static ReservationRequest CreateValidRequest(
-        DateTime? time = null, TimeSpan? duration = null) => new() 
+        DateTime? time = null, TimeSpan? duration = null) => new()
         {
             Time = time ?? DateTime.Now.AddHours(1),
-            Duration = duration ?? TimeSpan.FromHours(1) 
+            Duration = duration ?? TimeSpan.FromHours(1)
         };
 
     public class ReservationComparer : EqualityComparer<ReservationResponse>
@@ -300,7 +346,7 @@ public class ReservationTests
 
         public override bool Equals(ReservationResponse? x, ReservationResponse? y)
         {
-            if(x == null && y == null) return true;
+            if (x == null && y == null) return true;
 
             if (x == null || y == null) return false;
 
@@ -309,9 +355,15 @@ public class ReservationTests
 
         public override int GetHashCode([DisallowNull] ReservationResponse obj)
         {
-            return obj.Time.GetHashCode() 
-                ^ obj.Duration.GetHashCode() 
+            return obj.Time.GetHashCode()
+                ^ obj.Duration.GetHashCode()
                 ^ _carComparer.GetHashCode(obj.Car);
         }
+    }
+
+    public class TestDateTimeProvider : IDateTimeProvider
+    {
+        public TestDateTimeProvider() => Now = new DateTime(2023, 7, 20);
+        public DateTime Now { get; set;}
     }
 }

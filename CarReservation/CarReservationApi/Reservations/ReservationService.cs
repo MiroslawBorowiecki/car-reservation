@@ -9,18 +9,21 @@ public class ReservationService
 {
     private readonly ReservationRepository _reservationRepository;
     private readonly CarRepository _carRepository;
+    private readonly IDateTimeProvider _dateTimeProvider;
 
     public ReservationService(
-    ReservationRepository reservationRepository,
-    CarRepository carRepository)
+        ReservationRepository reservationRepository,
+        CarRepository carRepository,
+        IDateTimeProvider dateTimeProvider)
     {
         _reservationRepository = reservationRepository;
         _carRepository = carRepository;
+        _dateTimeProvider = dateTimeProvider;
     }
     
     public ReservationResponse? ReserveCar(ReservationRequest request)
     {
-        ReservationValidator.Validate(request);
+        ReservationValidator.Validate(request, _dateTimeProvider.Now);
 
         if (_carRepository.Count == 0) return null;
 
@@ -33,7 +36,8 @@ public class ReservationService
         return response;
     }
 
-    public List<ReservationResponse> GetAll() => _reservationRepository;
+    public List<ReservationResponse> GetAll() 
+        => _reservationRepository.Where(r => r.Time > _dateTimeProvider.Now).ToList();
 
     private Car? FindAvailableCar(ReservationRequest request)
     {

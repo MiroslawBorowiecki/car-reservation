@@ -147,36 +147,74 @@ public class ReservationTests
         var now = DateTime.Now;
         List<ReservationResponse> responses = new();
 
-        // Act
+        // Act 
         ReservationRequest request = CreateValidRequest(now.AddHours(1), new TimeSpan(1, 0, 0));
         HttpResponseMessage response = await SubmitReservation(client, request);
-        // Assert
+        // Assert (Mazda [1:00-2:00])
         responses.Add(await ItReservesFirstAvailableCar(response, request, CarTests.MazdaMx5));
 
-        // Act: reservation ending during an existing one - car available
-        var requestEndWithin = CreateValidRequest(now.AddHours(0.5), new TimeSpan(1, 30, 0));
-        response = await SubmitReservation(client, requestEndWithin);
-        // Assert
-        responses.Add(await ItReservesFirstAvailableCar(response, requestEndWithin, CarTests.OpelAstra));
+        // Act: reservation ending during an existing one - unreserved car available
+        request = CreateValidRequest(now.AddHours(0.5), new TimeSpan(1, 30, 0));
+        response = await SubmitReservation(client, request);
+        // Assert (Opel [0:30-2:00])
+        responses.Add(await ItReservesFirstAvailableCar(response, request, CarTests.OpelAstra));
 
-        // Act: reservation starting during an existing one - car available
-        var requestStartWithin = CreateValidRequest(now.AddHours(1.5), new TimeSpan(1, 0, 0));
-        response = await SubmitReservation(client, requestStartWithin);
-        // Assert
-        responses.Add(await ItReservesFirstAvailableCar(
-            response, requestStartWithin, CarTests.Peugeout206));
+        // Act: reservation starting during an existing one - unreserved car available
+        request = CreateValidRequest(now.AddHours(1.5), new TimeSpan(1, 0, 0));
+        response = await SubmitReservation(client, request);
+        // Assert (Peugeout [1:30-2:30])
+        responses.Add(await ItReservesFirstAvailableCar(response, request, CarTests.Peugeout206));
 
-        // Act: reservation encompassing an existing one - car available
-        var requestEncompassing = CreateValidRequest(now.AddHours(0.5), new TimeSpan(2, 0, 0));
-        response = await SubmitReservation(client, requestEncompassing);
-        // Assert
-        responses.Add(await ItReservesFirstAvailableCar(
-            response, requestEncompassing, CarTests.DodgeViper));
+        // Act: reservation encompassing an existing one - unresereved car available
+        request = CreateValidRequest(now.AddHours(0.5), new TimeSpan(2, 0, 0));
+        response = await SubmitReservation(client, request);
+        // Assert (Dodge [0:30-2:30])
+        responses.Add(await ItReservesFirstAvailableCar(response, request, CarTests.DodgeViper));
 
-        // 1. Positive - all conflict possibilities - at least one unreserved car.
-        // 2. Positive - all conflict possibilities - all cars reserved, at least one free at the time.
-        // 3. Negative - all conflict possibilities - all cars reserved at the time        
-        // 4. GET -> All positive reservations should be returned.
+        // Act: reservation ending during an existing one - another car available at the time
+        request = CreateValidRequest(now.AddHours(0.5), new TimeSpan(1, 0, 0));
+        response = await SubmitReservation(client, request);
+        // Assert (Peugeot [0:30-1:30] & [1:30-2:30])
+        responses.Add(await ItReservesFirstAvailableCar(response, request, CarTests.Peugeout206));
+
+        // Act: reservation starting during an existing one - another car available at the time
+        request = CreateValidRequest(now.AddHours(2), new TimeSpan(0, 30, 0));
+        response = await SubmitReservation(client, request);
+        // Assert (Mazda [1:00-2:00] & [2:00-2:30])
+        responses.Add(await ItReservesFirstAvailableCar(response, request, CarTests.MazdaMx5));
+
+        // Act: reservation encompassing (equal) an existing one - other car available at the time
+        request = CreateValidRequest(now.AddHours(2), new TimeSpan(0, 30, 0));
+        response = await SubmitReservation(client, request);
+        // Assert (Opel [0:30-2:00] & [2:00-2:30])
+        responses.Add(await ItReservesFirstAvailableCar(response, request, CarTests.OpelAstra));
+
+        // Act: reservation ending during an existing one - no cars available at the time
+        request = CreateValidRequest(now.AddHours(0.5), new TimeSpan(1, 30, 0));
+        response = await SubmitReservation(client, request);
+        // Assert
+        It.ShouldDenyTheAttempt(response, HttpStatusCode.Conflict);
+        await It.ShouldExplain(response, ReservationsController.NoCarsAvailable);
+
+        // Act: reservation starting during an existing one - no cars available at the time
+        request = CreateValidRequest(now.AddHours(1.5), new TimeSpan(1, 0, 0));
+        response = await SubmitReservation(client, request);
+        // Assert
+        It.ShouldDenyTheAttempt(response, HttpStatusCode.Conflict);
+        await It.ShouldExplain(response, ReservationsController.NoCarsAvailable);
+
+        // Act: reservation encompassing an existing one - no cars available at the time
+        request = CreateValidRequest(now.AddHours(0.5), new TimeSpan(2, 0, 0));
+        response = await SubmitReservation(client, request);
+        // Assert
+        It.ShouldDenyTheAttempt(response, HttpStatusCode.Conflict);
+        await It.ShouldExplain(response, ReservationsController.NoCarsAvailable);
+
+        // Act
+        HttpResponseMessage httpResponse = await client.GetAsync(BaseUri);
+        // Assert
+        It.ShouldAllowTheAttempt(httpResponse);        
+        await httpResponse.ShouldReturnAll(responses, ReservationComparer.That);
     }
 
     private static async Task<HttpResponseMessage> SubmitReservation
@@ -185,8 +223,6 @@ public class ReservationTests
         return await client.PostAsJsonAsync(BaseUri, request);
     }
 
-    // - Finding an unreserved car
-    // - Finding the car available in the given period
     // - Get shouldn't return reservations in the past
     // - Shouldn't be possible to remove or update a car upcoming reservations.
 

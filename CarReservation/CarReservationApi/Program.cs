@@ -1,6 +1,7 @@
 using CarReservationApi.Cars;
 using CarReservationApi.Cars.Persistence;
 using CarReservationApi.Reservations;
+using CarReservationApi.Reservations.Persistence;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -10,6 +11,7 @@ builder.Services.AddControllers();
 builder.Services
     .AddSingleton<CarService>()
     .AddSingleton<CarRepository>()
+    .AddSingleton<ReservationService>()
     .AddSingleton<ReservationRepository>();
 
 var app = builder.Build();

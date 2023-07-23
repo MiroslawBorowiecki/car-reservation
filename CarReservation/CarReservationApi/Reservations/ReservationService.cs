@@ -1,48 +1,39 @@
 ﻿using CarReservationApi.Cars;
 using CarReservationApi.Cars.Persistence;
-using Microsoft.AspNetCore.Mvc;
+using CarReservationApi.Http;
+using CarReservationApi.Reservations.Persistence;
 
 namespace CarReservationApi.Reservations;
 
-[ApiController]
-[Route("[controller]")]
-public class ReservationsController : ControllerBase
+public class ReservationService
 {
-    public const string NoCarsAvailable
-        = "Booking with the given time and duration is not possible - no cars are available.";
     private readonly ReservationRepository _reservationRepository;
     private readonly CarRepository _carRepository;
 
-    public ReservationsController(
-        ReservationRepository reservationRepository,
-        CarRepository carRepository)
+    public ReservationService(
+    ReservationRepository reservationRepository,
+    CarRepository carRepository)
     {
         _reservationRepository = reservationRepository;
         _carRepository = carRepository;
     }
-
-    [HttpPost]
-    public ActionResult ReserveCar(ReservationRequest request)
+    
+    public ReservationResponse? ReserveCar(ReservationRequest request)
     {
-        try
-        {
-            ReservationValidator.Validate(request);
-        }
-        catch (ArgumentException e)
-        {
-            return ValidationProblem(e.Message);
-        }
+        ReservationValidator.Validate(request);
 
-        if (_carRepository.Count == 0) return Conflict(NoCarsAvailable);
+        if (_carRepository.Count == 0) return null;
 
         var availableCar = FindAvailableCar(request);
 
-        if (availableCar == null) return Conflict(NoCarsAvailable);
+        if (availableCar == null) return null;
 
         var response = ReservationResponse.Create(request, availableCar);
         _reservationRepository.Add(response);
-        return Ok(response);
+        return response;
     }
+
+    public List<ReservationResponse> GetAll() => _reservationRepository;
 
     private Car? FindAvailableCar(ReservationRequest request)
     {
@@ -64,7 +55,4 @@ public class ReservationsController : ControllerBase
             .Except(conflictingCarReservations, CarComparer.That)
             .FirstOrDefault();
     }
-
-    [HttpGet]
-    public ActionResult<IEnumerable<ReservationResponse>> GetAll() => _reservationRepository;
 }

@@ -1,6 +1,6 @@
 ﻿using System.ComponentModel.DataAnnotations;
 
-namespace CarReservationApi.Reservations
+namespace CarReservationApi.Http
 {
     // Can be improved by using raw value types. Requires a different version for tests.
     public class ReservationRequest

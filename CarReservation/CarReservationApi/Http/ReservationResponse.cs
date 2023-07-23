@@ -1,4 +1,4 @@
-﻿namespace CarReservationApi.Reservations;
+﻿namespace CarReservationApi.Http;
 
 public class ReservationResponse
 {

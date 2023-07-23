@@ -1,5 +1,5 @@
 ﻿using CarReservationApi.Cars;
-using CarReservationApi.Reservations;
+using CarReservationApi.Http;
 
 namespace CarReservationApi.Tests;
 

@@ -118,7 +118,7 @@ public class CarTests
         await client.PostAsJsonAsync(BaseUri, OpelAstra);
         await client.PostAsJsonAsync(BaseUri, Peugeout206);
 
-        UpdateCarRequest updateCarRequest = new() { Make = "Jaguar", Model = "F-Type" };
+        CarUpdateRequest updateCarRequest = new() { Make = "Jaguar", Model = "F-Type" };
         HttpResponseMessage response
             = await client.PutAsJsonAsync($"{BaseUri}/{MazdaMx5.Id}", updateCarRequest);
 
@@ -138,7 +138,7 @@ public class CarTests
         await client.PostAsJsonAsync(BaseUri, MazdaMx5);
         await client.PostAsJsonAsync(BaseUri, Peugeout206);
 
-        UpdateCarRequest updateCarRequest = new() { Make = "Jaguar", Model = "F-Type" };
+        CarUpdateRequest updateCarRequest = new() { Make = "Jaguar", Model = "F-Type" };
         HttpResponseMessage response
             = await client.PutAsJsonAsync($"{BaseUri}/C500", updateCarRequest);
 
@@ -156,7 +156,7 @@ public class CarTests
     {
         HttpClient client = _factory.CreateClient();
 
-        UpdateCarRequest request = new () { Make = make, Model = model };
+        CarUpdateRequest request = new () { Make = make, Model = model };
         HttpResponseMessage response
             = await client.PutAsJsonAsync($"{BaseUri}/C1", request);
 
@@ -172,7 +172,7 @@ public class CarTests
     {
         HttpClient client = _factory.CreateClient();
 
-        UpdateCarRequest request = new() { Make = make, Model = model };
+        CarUpdateRequest request = new() { Make = make, Model = model };
         HttpResponseMessage response
             = await client.PutAsJsonAsync($"{BaseUri}/C1", request);
 

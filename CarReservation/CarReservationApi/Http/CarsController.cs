@@ -29,7 +29,7 @@ public class CarsController : ControllerBase
     // The same can still be achieved by adding new car first and then removing the previous one.
     [HttpPut]
     [Route("{id}")]
-    public ActionResult Update([FromRoute] string id, UpdateCarRequest updateCarRequest)
+    public ActionResult Update([FromRoute] string id, CarUpdateRequest updateCarRequest)
         => _carService.Update(id, updateCarRequest.Make, updateCarRequest.Model)
             ? NoContent()
             : NotFound();

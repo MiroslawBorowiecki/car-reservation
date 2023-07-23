@@ -5,7 +5,7 @@ using CarReservationApi.Http;
 namespace CarReservationApi.Tests;
 
 [TestClass]
-public class ReservationTests
+public partial class ReservationTests
 {
     private const string BaseUri = "/reservations";
     private readonly WebApplicationFactory<Program> _factory = new();    
@@ -358,11 +358,5 @@ public class ReservationTests
                 ^ obj.Duration.GetHashCode()
                 ^ _carComparer.GetHashCode(obj.Car);
         }
-    }
-
-    public class TestDateTimeProvider : IDateTimeProvider
-    {
-        public TestDateTimeProvider() => Now = new DateTime(2023, 7, 20);
-        public DateTime Now { get; set;}
     }
 }

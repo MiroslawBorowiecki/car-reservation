@@ -1,4 +1,5 @@
-﻿using CarReservationApi.Cars;
+﻿using Microsoft.Extensions.DependencyInjection;
+using CarReservationApi.Cars;
 using CarReservationApi.Http;
 
 namespace CarReservationApi.Tests;
@@ -132,18 +133,39 @@ public class CarTests
     }
 
     [TestMethod]
-    public async Task GivenACarWithUpcomingReservation_WhenITryToUpdateIt()
+    public async Task GivenACarWithUpcomingOrOngoingReservation_WhenITryToUpdateIt()
     {
-        HttpClient client = _factory.CreateClient();
+        // Arrange
+        TestDateTimeProvider timeProvider = new();
+        HttpClient client = _factory
+            .WithWebHostBuilder(b => b.ConfigureServices(
+                s => s.AddSingleton<IDateTimeProvider>(timeProvider)))
+            .CreateClient();
         await client.PostAsJsonAsync(BaseUri, MazdaMx5);
-        await ReservationTests.SubmitReservation(client, ReservationTests.CreateValidRequest());
+        await ReservationTests.SubmitReservation(
+            client, ReservationTests.CreateValidRequest(timeProvider.Now.AddHours(1)));
 
+        
+        // Act - the 'upcoming' reservation
         CarUpdateRequest updateCarRequest = new() { Make = "Jaguar", Model = "F-Type" };
         HttpResponseMessage response
             = await client.PutAsJsonAsync($"{BaseUri}/{MazdaMx5.Id}", updateCarRequest);
-
+        // Assert
         It.ShouldDenyTheAttempt(response, HttpStatusCode.Conflict);
         await It.ShouldExplain(response, Messages.CarReservedError);
+
+        // Act - the 'ongoing' reservation
+        timeProvider.Now = timeProvider.Now.AddHours(1.25);
+        response = await client.PutAsJsonAsync($"{BaseUri}/{MazdaMx5.Id}", updateCarRequest);
+        // Assert
+        It.ShouldDenyTheAttempt(response, HttpStatusCode.Conflict);
+        await It.ShouldExplain(response, Messages.CarReservedError);
+
+        // Act - no upcoming or ongoing reservations
+        timeProvider.Now = timeProvider.Now.AddHours(1.25);
+        response = await client.PutAsJsonAsync($"{BaseUri}/{MazdaMx5.Id}", updateCarRequest);
+        // Assert
+        It.ShouldAllowTheAttempt(response, HttpStatusCode.NoContent);
     }
 
     [TestMethod]
